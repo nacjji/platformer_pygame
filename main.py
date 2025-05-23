@@ -1,5 +1,14 @@
+import asyncio
+import pygame
 from src.game import Game
 
-if __name__ == "__main__":
+
+async def main():
+    pygame.init()
     game = Game()
-    game.run()
+
+    while True:
+        game.run()
+        await asyncio.sleep(0)  # 웹 환경에서 필요한 비동기 처리
+
+asyncio.run(main())

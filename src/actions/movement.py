@@ -87,14 +87,3 @@ class Land:
         player.velocity_y = 0
         player.is_jumping = False
         return True
-
-
-class HorizontalMove:
-    @staticmethod
-    def execute(player, direction):
-        """플레이어를 좌우로 이동시킵니다."""
-        player.pos_x += direction * PLAYER_SPEED
-        # 화면 경계 처리
-        player.pos_x = max(PLAYER_SIZE, min(
-            SCREEN_WIDTH - PLAYER_SIZE, player.pos_x))
-        return True
