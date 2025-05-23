@@ -17,7 +17,6 @@ class Movement:
         player.pos_y += player.velocity_y
 
         # 플랫폼과의 충돌 검사
-        player_rect = player.rect
         player_bottom = player.bottom
         prev_bottom = prev_y + PLAYER_HEIGHT/2
 
@@ -29,16 +28,15 @@ class Movement:
             if player.velocity_y > 0:
                 # 플레이어의 바닥과 플랫폼 상단의 충돌 검사
                 if (prev_bottom <= platform.y and  # 이전 프레임에서는 플랫폼보다 위에 있었고
-                    player_bottom >= platform.y and  # 현재 프레임에서는 플랫폼보다 아래로 이동했으며
-                    player_rect.right > platform.x and  # 수평으로는 플랫폼 범위 안에 있을 때
-                        player_rect.left < platform.x + platform.width):
+                        player_bottom >= platform.y):  # 현재 프레임에서는 플랫폼보다 아래로 이동했으며
 
-                    # 플랫폼 위에 착지
-                    player.pos_y = platform.y - PLAYER_HEIGHT/2
-                    player.velocity_y = 0
-                    player.is_jumping = False
-                    current_platform = platform
-                    break
+                    # 플레이어의 중심이 플랫폼 범위 안에 있는지 확인
+                    if (platform.x <= player.pos_x <= platform.x + platform.width):
+                        # 플랫폼 위에 착지
+                        player.pos_y = platform.y - PLAYER_HEIGHT/2
+                        player.velocity_y = 0
+                        player.is_jumping = False
+                        break
 
             # 이미 플랫폼 위에 서 있는 경우 (점프하지 않은 상태)
             elif not player.is_jumping:
