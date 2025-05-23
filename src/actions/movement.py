@@ -36,6 +36,7 @@ class Movement:
                         player.pos_y = platform.y - PLAYER_HEIGHT/2
                         player.velocity_y = 0
                         player.is_jumping = False
+                        current_platform = platform
                         break
 
             # 이미 플랫폼 위에 서 있는 경우 (점프하지 않은 상태)
@@ -47,7 +48,7 @@ class Movement:
                     break
 
         # 움직이는 플랫폼 위에 있을 경우 플랫폼과 함께 이동
-        if current_platform and current_platform.is_moving:
+        if current_platform and current_platform.is_moving and not player.is_jumping:
             player.pos_x += current_platform.speed * current_platform.direction
 
     @staticmethod
