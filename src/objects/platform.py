@@ -1,10 +1,11 @@
 import pygame
 import random
+import time
 from ..constants import *
 
 
 class Platform:
-    def __init__(self, x, y, width=None, is_moving=False):
+    def __init__(self, x, y, width=None, is_moving=False, is_transforming=False, is_vanish=False):
         """
         발판을 초기화합니다.
         Args:
@@ -12,28 +13,48 @@ class Platform:
             y (float): 발판의 y 좌표 (상단 기준)
             width (float, optional): 발판의 너비. None이면 랜덤한 너비로 생성
             is_moving (bool): 움직이는 플랫폼인지 여부
+            is_transforming (bool): 크기가 변하는 플랫폼인지 여부
+            is_vanish (bool): 사라졌다 나타나는 플랫폼인지 여부
         """
         self.x = x
         self.initial_x = x  # 초기 x 위치 저장
         self.y = y
-        self.width = width if width is not None else random.randint(
+        self.initial_width = width if width is not None else random.randint(
             PLATFORM_MIN_WIDTH, PLATFORM_MAX_WIDTH)
+        self.width = self.initial_width
         self.height = PLATFORM_HEIGHT
+        self.min_width = max(PLATFORM_MIN_WIDTH, int(
+            self.initial_width * TRANSFORM_MIN_WIDTH_RATIO))
 
         # 움직임 관련 속성
         self.is_moving = is_moving
         if is_moving:
             self.direction = 1  # 1: 오른쪽, -1: 왼쪽
-
-            # 높이에 따른 속도 계산 (시작 높이에서 얼마나 올라갔는지)
             height_factor = abs(
                 int((SCREEN_HEIGHT - self.y) / 400))  # 400픽셀당 1씩 증가
             self.speed = min(MOVING_PLATFORM_SPEED +
                              height_factor, MOVING_PLATFORM_MAX_SPEED)
             self.move_range = MOVING_PLATFORM_RANGE
 
+        # 변형 관련 속성
+        self.is_transforming = is_transforming
+        if is_transforming:
+            self.transform_speed = random.uniform(
+                TRANSFORM_MIN_SPEED, TRANSFORM_MAX_SPEED)
+            self.transform_direction = -1  # -1: 줄어듦, 1: 늘어남
+            self.center = self.x + self.width / 2  # 중심점 저장
+
+        # 사라지는 속성
+        self.is_vanish = is_vanish
+        if is_vanish:
+            self.is_visible = True
+            self.last_vanish_time = time.time() * 1000
+            self.vanish_start_time = 0
+
     def update(self):
         """플랫폼의 상태를 업데이트합니다."""
+        current_time = time.time() * 1000
+
         if self.is_moving:
             # 이동
             self.x += self.speed * self.direction
@@ -45,6 +66,39 @@ class Platform:
             elif self.x + self.width >= SCREEN_WIDTH:
                 self.x = SCREEN_WIDTH - self.width
                 self.direction = -1
+
+        if self.is_transforming:
+            # 크기 변화
+            self.width += self.transform_speed * self.transform_direction
+
+            # 최소/최대 크기에서 방향 전환
+            if self.width <= self.min_width:
+                self.width = self.min_width
+                self.transform_direction = 1
+            elif self.width >= self.initial_width:
+                self.width = self.initial_width
+                self.transform_direction = -1
+
+            # 중심점 기준으로 x 위치 조정
+            self.x = self.center - self.width / 2
+
+            # 화면 경계 처리
+            if self.x < 0:
+                self.x = 0
+            elif self.x + self.width > SCREEN_WIDTH:
+                self.x = SCREEN_WIDTH - self.width
+
+        if self.is_vanish:
+            if self.is_visible:
+                # 보이는 상태에서 VANISH_INTERVAL 시간이 지나면 사라짐
+                if current_time - self.last_vanish_time >= VANISH_INTERVAL:
+                    self.is_visible = False
+                    self.vanish_start_time = current_time
+            else:
+                # 사라진 상태에서 VANISH_DURATION 시간이 지나면 다시 나타남
+                if current_time - self.vanish_start_time >= VANISH_DURATION:
+                    self.is_visible = True
+                    self.last_vanish_time = current_time
 
     @property
     def right(self):
@@ -68,6 +122,10 @@ class Platform:
 
     def draw(self, screen, camera_y):
         """발판을 화면에 그립니다."""
+        # 사라지는 플랫폼이고 현재 보이지 않는 상태면 그리지 않음
+        if self.is_vanish and not self.is_visible:
+            return
+
         screen_y = self.y - camera_y  # 카메라 위치를 고려한 화면상의 y 위치
 
         # 화면에 보이는 발판만 그리기
@@ -81,11 +139,18 @@ class Platform:
 
     def is_point_above(self, x, y):
         """주어진 점이 발판 바로 위에 있는지 확인합니다."""
+        # 사라진 상태의 플랫폼은 밟을 수 없음
+        if self.is_vanish and not self.is_visible:
+            return False
         return (self.x <= x <= self.right and
                 self.y - 5 <= y <= self.y + 5)  # 약간의 여유 범위를 둠
 
     def is_within_reach(self, x, y, max_jump_height, max_jump_width):
         """현재 위치에서 이 발판에 도달할 수 있는지 확인합니다."""
+        # 사라진 상태의 플랫폼은 도달할 수 없음
+        if self.is_vanish and not self.is_visible:
+            return False
+
         # 수직 거리 체크
         if y - max_jump_height > self.bottom:  # 발판이 너무 높음
             return False
@@ -107,7 +172,7 @@ class Platform:
         """
         platforms = []
 
-        # 첫 번째 발판은 화면 중앙 하단에 생성
+        # 첫 번째 발판은 화면 중앙 하단에 생성 (일반 플랫폼으로 고정)
         first_platform = cls(
             x=SCREEN_WIDTH//2 - PLATFORM_MAX_WIDTH//2,
             y=SCREEN_HEIGHT - 100,
@@ -121,7 +186,7 @@ class Platform:
 
         for _ in range(count - 1):
             new_platform = cls.create_random(
-                prev_platform.x, prev_platform.y, current_width)
+                prev_platform.x, prev_platform.y, current_width, prev_platform)
             current_width = new_platform.width
             platforms.append(new_platform)
             prev_platform = new_platform
@@ -129,13 +194,14 @@ class Platform:
         return platforms
 
     @classmethod
-    def create_random(cls, prev_x, prev_y, current_width=None):
+    def create_random(cls, prev_x, prev_y, current_width=None, prev_platform=None):
         """
         이전 발판에서 도달 가능한 범위 내에서 새로운 발판을 생성합니다.
         Args:
             prev_x (float): 이전 발판의 x 좌표
             prev_y (float): 이전 발판의 y 좌표
             current_width (int): 현재 생성할 발판의 너비. None이면 최대 너비로 시작
+            prev_platform (Platform): 이전 플랫폼 객체
         Returns:
             Platform: 생성된 발판
         """
@@ -163,7 +229,25 @@ class Platform:
             max_jump_height * 0.6, max_jump_height * 0.8)
         y = prev_y - height_gap
 
-        # 움직이는 플랫폼 결정 (30% 확률)
-        is_moving = random.random() < MOVING_PLATFORM_CHANCE
+        # 플랫폼 타입 결정
+        platform_type = random.random()  # 0.0 ~ 1.0 사이의 랜덤 값
 
-        return cls(x, y, width, is_moving)
+        # 이전 플랫폼이 사라지는 플랫폼이었다면 일반 또는 움직이는 플랫폼만 생성 가능
+        if prev_platform and hasattr(prev_platform, 'is_vanish') and prev_platform.is_vanish:
+            if platform_type < MOVING_PLATFORM_CHANCE:
+                return cls(x, y, width, is_moving=True)
+            else:
+                return cls(x, y, width)
+
+        # 움직이는 플랫폼 (30% 확률)
+        if platform_type < MOVING_PLATFORM_CHANCE:
+            return cls(x, y, width, is_moving=True)
+        # 변형되는 플랫폼 (20% 확률)
+        elif platform_type < MOVING_PLATFORM_CHANCE + 0.2:
+            return cls(x, y, width, is_transforming=True)
+        # 사라지는 플랫폼 (15% 확률)
+        elif platform_type < MOVING_PLATFORM_CHANCE + 0.2 + VANISH_PLATFORM_CHANCE:
+            return cls(x, y, width, is_vanish=True)
+        # 일반 플랫폼
+        else:
+            return cls(x, y, width)

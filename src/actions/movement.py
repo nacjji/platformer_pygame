@@ -24,6 +24,10 @@ class Movement:
         current_platform = None
 
         for platform in platforms:
+            # 사라진 상태의 플랫폼은 무시
+            if hasattr(platform, 'is_vanish') and platform.is_vanish and not platform.is_visible:
+                continue
+
             # 플레이어가 떨어지는 중일 때만 충돌 체크
             if player.velocity_y > 0:
                 # 플레이어의 바닥과 플랫폼 상단의 충돌 검사
@@ -50,6 +54,11 @@ class Movement:
         # 움직이는 플랫폼 위에 있을 경우 플랫폼과 함께 이동
         if current_platform and current_platform.is_moving and not player.is_jumping:
             player.pos_x += current_platform.speed * current_platform.direction
+
+        # 현재 서있는 플랫폼이 사라진 상태라면 플레이어를 떨어지게 함
+        if current_platform and hasattr(current_platform, 'is_vanish') and current_platform.is_vanish and not current_platform.is_visible:
+            player.is_jumping = True
+            current_platform = None
 
     @staticmethod
     def move_horizontal(player, direction):

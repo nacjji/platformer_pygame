@@ -1,5 +1,7 @@
 import pygame
 import sys
+import random
+import time
 
 from src.ui.score import ScoreUI
 from .constants import *

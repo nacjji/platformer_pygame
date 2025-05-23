@@ -36,7 +36,7 @@ CAMERA_MARGIN = SCREEN_HEIGHT * 0.4  # 화면 40% 지점을 기준으로 카메�
 PLATFORM_WIDTH = 100
 PLATFORM_HEIGHT = 20
 PLATFORM_MIN_WIDTH = 1   # 최소 발판 너비를 1px로 설정
-PLATFORM_MAX_WIDTH = 120  # 최대 발판 너비
+PLATFORM_MAX_WIDTH = 60  # 최대 발판 너비
 PLATFORM_WIDTH_DECREASE = 1  # 발판 생성마다 줄어드는 너비
 # 한 화면에 그리는 발판 최대 개수
 PLATFORM_COUNT = SCREEN_HEIGHT // (PLATFORM_HEIGHT + 10)
@@ -71,4 +71,14 @@ BUTTON_POS = (SCREEN_WIDTH//2 - 100, SCREEN_HEIGHT//2 + 50)  # 버튼 위치
 MOVING_PLATFORM_SPEED = 3  # 움직이는 플랫폼의 기본 속도
 MOVING_PLATFORM_MAX_SPEED = 6  # 움직이는 플랫폼의 최대 속도
 MOVING_PLATFORM_RANGE = 100  # 움직이는 거리
-MOVING_PLATFORM_CHANCE = 0.3  # 움직이는 플랫폼이 생성될 확률
+MOVING_PLATFORM_CHANCE = 0.4  # 움직이는 플랫폼이 생성될 확률
+
+# 변형 플랫폼 설정
+TRANSFORM_MIN_SPEED = 0.5  # 최소 변형 속도
+TRANSFORM_MAX_SPEED = 2.0  # 최대 변형 속도
+TRANSFORM_MIN_WIDTH_RATIO = 0.1  # 최소 너비 비율 (초기 너비의 10%)
+
+# 사라지는 플랫폼 설정
+VANISH_INTERVAL = 2000  # 사라지고 나타나는 주기 (밀리초)
+VANISH_DURATION = 1000  # 사라져있는 시간 (밀리초)
+VANISH_PLATFORM_CHANCE = 0.15  # 사라지는 플랫폼이 생성될 확률
