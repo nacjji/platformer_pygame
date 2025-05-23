@@ -76,7 +76,7 @@ MOVING_PLATFORM_CHANCE = 0.4  # 움직이는 플랫폼이 생성될 확률
 # 변형 플랫폼 설정
 TRANSFORM_MIN_SPEED = 0.5  # 최소 변형 속도
 TRANSFORM_MAX_SPEED = 2.0  # 최대 변형 속도
-TRANSFORM_MIN_WIDTH_RATIO = 0.1  # 최소 너비 비율 (초기 너비의 10%)
+TRANSFORM_MIN_WIDTH_RATIO = 0.2  # 최소 너비 비율 (초기 너비의 10%)
 
 # 사라지는 플랫폼 설정
 VANISH_INTERVAL = 2000  # 사라지고 나타나는 주기 (밀리초)
