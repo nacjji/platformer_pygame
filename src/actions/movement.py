@@ -75,7 +75,7 @@ class Land:
     def execute(player, platform_y):
         """플레이어를 발판 위에 착지시킵니다."""
         print(f"발판 위에 착지: {platform_y}")
-        player.absolute_y = platform_y - PLAYER_SIZE
+        player.absolute_y = platform_y - PLAYER_HEIGHT/2
         player.velocity_y = 0
         player.is_jumping = False
         return True

@@ -24,7 +24,12 @@ class Platform:
         self.is_moving = is_moving
         if is_moving:
             self.direction = 1  # 1: 오른쪽, -1: 왼쪽
-            self.speed = MOVING_PLATFORM_SPEED
+
+            # 높이에 따른 속도 계산 (시작 높이에서 얼마나 올라갔는지)
+            height_factor = abs(
+                int((SCREEN_HEIGHT - self.y) / 400))  # 400픽셀당 1씩 증가
+            self.speed = min(MOVING_PLATFORM_SPEED +
+                             height_factor, MOVING_PLATFORM_MAX_SPEED)
             self.move_range = MOVING_PLATFORM_RANGE
 
     def update(self):

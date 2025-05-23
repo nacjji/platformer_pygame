@@ -68,6 +68,7 @@ BUTTON_SIZE = (200, 50)  # 버튼 크기
 BUTTON_POS = (SCREEN_WIDTH//2 - 100, SCREEN_HEIGHT//2 + 50)  # 버튼 위치
 
 # 움직이는 플랫폼 설정
-MOVING_PLATFORM_SPEED = 3  # 움직이는 플랫폼의 속도
+MOVING_PLATFORM_SPEED = 3  # 움직이는 플랫폼의 기본 속도
+MOVING_PLATFORM_MAX_SPEED = 6  # 움직이는 플랫폼의 최대 속도
 MOVING_PLATFORM_RANGE = 100  # 움직이는 거리
 MOVING_PLATFORM_CHANCE = 0.3  # 움직이는 플랫폼이 생성될 확률
