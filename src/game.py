@@ -164,17 +164,9 @@ class Game:
 
     def run(self):
         """게임 메인 루프를 실행합니다."""
-        # 이벤트 처리
-        if not self.handle_events():
-            return False
-
-        # 게임 상태 업데이트
-        self.update()
-
-        # 화면 그리기
-        self.draw()
-
-        # FPS 제어
-        self.clock.tick(FPS)
-
-        return True
+        running = True
+        while running:
+            running = self.handle_events()
+            self.update()
+            self.draw()
+            self.clock.tick(FPS)
