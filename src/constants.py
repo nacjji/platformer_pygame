@@ -1,0 +1,73 @@
+import pygame
+
+# 게임 설정
+SCREEN_WIDTH = 450
+SCREEN_HEIGHT = 800
+FPS = 60
+
+# 카메라 설정
+CAMERA_FOLLOW_THRESHOLD = SCREEN_HEIGHT * 0.4  # 화면 40% 지점부터 카메라가 따라감
+
+# 색상
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GREEN = (100, 200, 100)  # 발판 색상
+RED = (255, 0, 0)  # 게임오버 텍스트 색상
+
+# 플레이어 설정
+PLAYER_WIDTH = 20  # 플레이어 너비
+PLAYER_HEIGHT = 40  # 플레이어 높이
+PLAYER_SPEED = 5
+JUMP_POWER = -15
+GRAVITY = 0.8
+
+# 점프 관련 물리 계산
+# 최대 점프 시간 (초) = 상승시간 + 하강시간
+# 상승시간 = -JUMP_POWER / GRAVITY
+# 최대 높이 = JUMP_POWER^2 / (2 * GRAVITY)
+MAX_JUMP_TIME = abs(2 * JUMP_POWER / GRAVITY)  # 점프 후 착지까지 걸리는 시간
+MAX_JUMP_HEIGHT = abs(JUMP_POWER * JUMP_POWER / (2 * GRAVITY))  # 최대 점프 높이
+MAX_JUMP_DISTANCE = PLAYER_SPEED * MAX_JUMP_TIME  # 최대 수평 이동 거리
+
+# 카메라 설정
+CAMERA_MARGIN = SCREEN_HEIGHT * 0.4  # 화면 40% 지점을 기준으로 카메라 이동 시작
+
+# 발판 설정
+PLATFORM_WIDTH = 100
+PLATFORM_HEIGHT = 20
+PLATFORM_MIN_WIDTH = 1   # 최소 발판 너비를 1px로 설정
+PLATFORM_MAX_WIDTH = 120  # 최대 발판 너비
+PLATFORM_WIDTH_DECREASE = 1  # 발판 생성마다 줄어드는 너비
+# 한 화면에 그리는 발판 최대 개수
+PLATFORM_COUNT = SCREEN_HEIGHT // (PLATFORM_HEIGHT + 10)
+
+# 발판 생성 관련
+PLATFORM_MIN_GAP = MAX_JUMP_DISTANCE * 0.7  # 최소 수평 간격 (최대 점프 거리의 30%)
+PLATFORM_MAX_GAP = MAX_JUMP_DISTANCE * 0.9  # 최대 수평 간격 (최대 점프 거리의 70%)
+PLATFORM_MIN_HEIGHT_GAP = MAX_JUMP_HEIGHT * 0.7  # 최소 수직 간격
+PLATFORM_MAX_HEIGHT_GAP = MAX_JUMP_HEIGHT * 0.9  # 최대 수직 간격
+
+# 점프 최대 거리 계산
+MAX_HORIZONTAL_DISTANCE = PLAYER_SPEED * MAX_JUMP_TIME  # 수평으로 이동 가능한 최대 거리
+MAX_VERTICAL_DISTANCE = abs(
+    JUMP_POWER * MAX_JUMP_TIME / 2 + 0.5 * GRAVITY * (MAX_JUMP_TIME / 2) ** 2)
+
+# 발판 간격 설정
+MIN_HORIZONTAL_GAP = MAX_HORIZONTAL_DISTANCE * 0.4
+MAX_HORIZONTAL_GAP = MAX_HORIZONTAL_DISTANCE * 0.7
+VERTICAL_GAP = MAX_VERTICAL_DISTANCE * 0.7
+
+# UI 설정
+FONT_SIZE = 36
+SCORE_POS = (10, 10)
+GAMEOVER_TEXT_POS = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+RETRY_BUTTON_SIZE = (120, 40)
+RETRY_BUTTON_POS = (SCREEN_WIDTH // 2 - 60, SCREEN_HEIGHT // 2 + 50)
+BUTTON_COLOR = (100, 100, 255)  # 버튼 색상
+BUTTON_SIZE = (200, 50)  # 버튼 크기
+BUTTON_POS = (SCREEN_WIDTH//2 - 100, SCREEN_HEIGHT//2 + 50)  # 버튼 위치
+
+# 움직이는 플랫폼 설정
+MOVING_PLATFORM_SPEED = 3  # 움직이는 플랫폼의 속도
+MOVING_PLATFORM_RANGE = 100  # 움직이는 거리
+MOVING_PLATFORM_CHANCE = 0.3  # 움직이는 플랫폼이 생성될 확률
