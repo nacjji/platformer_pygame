@@ -95,14 +95,10 @@ jobs:
             }
           }));
 
-          const PORT = process.env.PORT || 8000;
-          app.listen(PORT, () => {
-            console.log('Proxy server running on port', PORT);
+          app.listen(3000, () => {
+            console.log('Proxy server running on port 3000');
           });
           EOL
 
       - name: Start proxy server
-        run: |
-          nohup node proxy.js > proxy.log 2>&1 &
-          sleep 5
-          cat proxy.log
+        run: node proxy.js
