@@ -43,12 +43,17 @@ class Game:
 
         # 게임 객체 초기화
         self.platforms = []
+        self.obstacles = []  # 장애물 리스트 추가
+        self.last_obstacle_height = 0  # 마지막 장애물 생성 높이
+        self.obstacle_interval = 300  # 10m (100픽셀 = 1m)
         self.player = None
 
     def reset_game(self):
         """게임을 초기 상태로 리셋합니다."""
         # 초기 발판들 생성 (더 많은 수의 초기 발판)
         self.platforms = Platform.create_initial_platforms(10)
+        self.obstacles = []  # 장애물 리스트 초기화
+        self.last_obstacle_height = 0
 
         # 첫 번째 발판 위에 플레이어 생성
         first_platform = self.platforms[0]
@@ -130,6 +135,13 @@ class Game:
         # 플랫폼 업데이트
         for platform in self.platforms:
             platform.update()
+
+        # 장애물 업데이트 및 충돌 체크
+        for obstacle in self.obstacles:
+            obstacle.update()
+            if obstacle.check_collision(self.player):
+                # 충돌 효과는 check_collision 내에서 처리됨
+                pass
 
         # 플레이어 업데이트
         self.player.update(self.platforms)

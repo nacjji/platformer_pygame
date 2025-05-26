@@ -9,28 +9,29 @@ class SplashScreen:
         self.title_font = pygame.font.Font(None, FONT_SIZE * 2)
         self.small_font = pygame.font.Font(None, FONT_SIZE - 8)  # 작은 폰트 크기 조정
 
-        # 버튼 크기와 위치 설정
-        self.start_button = pygame.Rect(
-            SCREEN_WIDTH//2 - 100,
-            SCREEN_HEIGHT//2 + 100,
-            200, 50
-        )
-
-        # 난이도 버튼들 크기 증가
-        button_y = SCREEN_HEIGHT//2
-        button_width = 120  # 버튼 너비 증가
-        button_height = 60  # 버튼 높이 증가
+        # 난이도 버튼들 크기와 위치 설정
+        button_width = 120  # 버튼 너비
+        button_height = 60  # 버튼 높이
         gap = 30  # 버튼 사이 간격
 
         total_width = (button_width * 3) + (gap * 2)
         start_x = (SCREEN_WIDTH - total_width) // 2
+        button_y = SCREEN_HEIGHT - 200  # 화면 하단에서 200픽셀 위
 
+        # 난이도 버튼 위치 설정
         self.easy_button = pygame.Rect(
             start_x, button_y, button_width, button_height)
         self.normal_button = pygame.Rect(
             start_x + button_width + gap, button_y, button_width, button_height)
         self.hard_button = pygame.Rect(
             start_x + (button_width + gap) * 2, button_y, button_width, button_height)
+
+        # Start Game 버튼 위치 설정
+        self.start_button = pygame.Rect(
+            SCREEN_WIDTH//2 - 100,
+            SCREEN_HEIGHT - 100,  # 화면 하단에서 100픽셀 위
+            200, 50
+        )
 
         # 선택된 난이도 (기본값: Normal)
         self.selected_difficulty = "Normal"
@@ -43,10 +44,25 @@ class SplashScreen:
         title_rect = title.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//4))
         screen.blit(title, title_rect)
 
+        # 조작법 가이드 추가
+        guide_texts = [
+            "How to Play",
+            "<- -> : Move Left/Right",
+            "SPACE : Jump"
+        ]
+
+        guide_y = SCREEN_HEIGHT//4 + 60
+        for text in guide_texts:
+            guide_surface = self.font.render(text, True, WHITE)
+            guide_rect = guide_surface.get_rect(
+                center=(SCREEN_WIDTH//2, guide_y))
+            screen.blit(guide_surface, guide_rect)
+            guide_y += 30
+
         # 난이도 선택 텍스트
         difficulty_text = self.font.render("Select Difficulty:", True, WHITE)
         difficulty_rect = difficulty_text.get_rect(
-            center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 - 50))
+            center=(SCREEN_WIDTH//2, SCREEN_HEIGHT - 400))  # 난이도 버튼 위에 표시
         screen.blit(difficulty_text, difficulty_rect)
 
         # 난이도 버튼 그리기
