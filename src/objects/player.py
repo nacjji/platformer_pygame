@@ -111,12 +111,21 @@ class Player:
         """플레이어의 상태를 업데이트합니다."""
         Movement.apply_gravity(self, platforms)
 
-        # 발판에 착지하면 점프 상태 초기화
+        # 발판에 착지했는지 확인
+        is_landing = False
         for platform in platforms:
             if platform.is_point_above(self.pos_x, self.bottom):
+                is_landing = True
+                break
+
+        # 착지 상태가 아니면 점프 불가능
+        if not is_landing:
+            self.is_jumping = True
+        else:
+            # 착지했을 때만 점프 상태 초기화
+            if self.is_jumping:
                 self.is_jumping = False
                 self.has_double_jumped = False
-                break
 
         # 화면 아래로 떨어졌는지 확인
         if self.screen_y > SCREEN_HEIGHT + PLAYER_HEIGHT:
