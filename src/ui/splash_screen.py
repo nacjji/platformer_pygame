@@ -62,7 +62,7 @@ class SplashScreen:
         # 난이도 선택 텍스트
         difficulty_text = self.font.render("Select Difficulty:", True, WHITE)
         difficulty_rect = difficulty_text.get_rect(
-            center=(SCREEN_WIDTH//2, SCREEN_HEIGHT - 400))  # 난이도 버튼 위에 표시
+            center=(SCREEN_WIDTH//2, SCREEN_HEIGHT - 250))  # 난이도 버튼 위에 표시
         screen.blit(difficulty_text, difficulty_rect)
 
         # 난이도 버튼 그리기

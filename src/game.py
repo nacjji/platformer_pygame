@@ -256,9 +256,11 @@ class Game:
 
     def run(self):
         """게임 메인 루프를 실행합니다."""
-        running = True
-        while running:
-            running = self.handle_events()
-            self.update()
-            self.draw()
-            self.clock.tick(FPS)
+        running = self.handle_events()
+        self.update()
+        self.draw()
+        self.clock.tick(FPS)
+        return running
+
+
+# 0qZZ3H8)
