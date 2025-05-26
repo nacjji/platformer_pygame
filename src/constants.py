@@ -67,3 +67,25 @@ BUTTON_POS = (SCREEN_WIDTH//2 - 100, SCREEN_HEIGHT//2 + 50)  # 버튼 위치
 
 # 움직이는 플랫폼 설정
 MOVING_PLATFORM_RANGE = 100  # 움직이는 거리
+
+
+# 아이템 설정
+ITEM_SIZE = 15  # 아이템의 크기
+ITEM_SPAWN_CHANCE = 0.015  # 아이템 생성 확률 (0.1%)
+
+# 아이템 종류
+ITEM_TYPES = {
+    'jump_boost': {
+        'color': (0, 255, 0),  # 초록색
+        'duration': 10,  # 지속 높이 (m)
+        'effect': 'jump_power_multiplier',
+        'value': 1.5  # 점프력 2배
+    },
+    'speed_reduce': {
+        'color': (255, 0, 0),  # 빨간색
+        'duration': 10,  # 지속 높이 (m)
+        'effect': 'speed_multiplier',
+        'value': 0.2  # 이동속도 절반
+    },
+
+}

@@ -1,10 +1,11 @@
 import pygame
-
+import random
 from src.ui.score import ScoreUI
 from src.ui.splash_screen import SplashScreen
 from .constants import *
 from .objects.player import Player
 from .objects.platform import Platform
+from .objects.item import Item
 
 
 class Game:
@@ -16,6 +17,7 @@ class Game:
         self.score_ui = ScoreUI()  # 점수 UI 초기화
         self.font = pygame.font.Font(None, FONT_SIZE)
         self.big_font = pygame.font.Font(None, FONT_SIZE + 20)  # 큰 폰트 추가
+        self.small_font = pygame.font.Font(None, 24)  # 작은 폰트 추가
 
         # 버튼 위치 및 크기 조정
         button_width = 250
@@ -38,10 +40,14 @@ class Game:
 
         # 게임 객체 초기화
         self.platforms = []
+        self.items = []  # 아이템 리스트 추가
         self.obstacles = []  # 장애물 리스트 추가
         self.last_obstacle_height = 0  # 마지막 장애물 생성 높이
         self.obstacle_interval = 300  # 10m (100픽셀 = 1m)
         self.player = None
+
+        # 버프 상태 초기화
+        self.active_buffs = {}  # 현재 활성화된 버프들
 
     def reset_game(self):
         """게임을 초기 상태로 리셋합니다."""
@@ -106,6 +112,144 @@ class Game:
 
         return True
 
+    def generate_items(self):
+        """새로운 아이템을 생성합니다."""
+        # 화면 상단에서 일정 높이 이상 떨어진 아이템은 제거
+        self.items = [item for item in self.items if item.pos_y >
+                      self.camera_y - SCREEN_HEIGHT]
+
+        # 새로운 아이템 생성
+        if random.random() < ITEM_SPAWN_CHANCE:
+            # 현재 화면에 보이는 플랫폼들 중에서 선택
+            visible_platforms = [p for p in self.platforms
+                                 if p.y > self.camera_y - SCREEN_HEIGHT
+                                 and p.y < self.camera_y]
+
+            if visible_platforms:
+                # 가장 가까운 아이템과의 거리 확인
+                min_distance_up = 1000  # 위로 10m(1000픽셀)
+                min_distance_down = 500  # 아래로 5m(500픽셀)
+                valid_platforms = []
+
+                for platform in visible_platforms:
+                    # 이 플랫폼이 다른 아이템들과 충분히 떨어져 있는지 확인
+                    is_valid = True
+                    for item in self.items:
+                        height_diff = platform.y - item.pos_y
+                        if height_diff > 0:  # 플랫폼이 아이템보다 위에 있는 경우
+                            if height_diff < min_distance_up:
+                                is_valid = False
+                                break
+                        else:  # 플랫폼이 아이템보다 아래에 있는 경우
+                            if abs(height_diff) < min_distance_down:
+                                is_valid = False
+                                break
+                    if is_valid:
+                        valid_platforms.append(platform)
+
+                if valid_platforms:
+                    # 유효한 플랫폼들 중에서 랜덤하게 선택
+                    platform = random.choice(valid_platforms)
+
+                    # 플랫폼 위에 아이템 생성 (플랫폼의 중앙에서 좌우로 약간의 랜덤성 부여)
+                    x = platform.center_x + \
+                        random.randint(-platform.width//3, platform.width//3)
+                    # 플랫폼 위에 아이템 배치 (플랫폼 높이에서 아이템 크기의 절반만큼 위로)
+                    y = platform.y - ITEM_SIZE/2
+
+                    # 랜덤하게 아이템 타입 선택
+                    item_type = random.choice(list(ITEM_TYPES.keys()))
+
+                    # 새 아이템 생성
+                    new_item = Item(x, y, item_type)
+                    self.items.append(new_item)
+
+    def draw_buff_status(self):
+        """우측 상단에 버프 상태를 표시합니다."""
+        if not self.active_buffs:
+            return
+
+        # 버프 아이콘 크기와 간격
+        icon_size = 30
+        icon_gap = 10
+        start_x = SCREEN_WIDTH - 20
+        start_y = 20
+
+        for i, (buff_type, buff_info) in enumerate(self.active_buffs.items()):
+            # 버프 아이콘 그리기
+            color = ITEM_TYPES[buff_type]['color']
+            pygame.draw.circle(self.screen, color, (
+                start_x - i * (icon_size + icon_gap),
+                start_y
+            ), icon_size/2)
+
+            # 버프 아이콘 테두리
+            pygame.draw.circle(self.screen, (0, 0, 0), (
+                start_x - i * (icon_size + icon_gap),
+                start_y
+            ), icon_size/2, 1)
+
+            # 남은 높이 표시
+            remaining_height = buff_info['duration'] - \
+                (self.player.raw_height - buff_info['start_height'])
+            if remaining_height > 0:
+                text = self.small_font.render(
+                    f"{remaining_height}m", True, (0, 0, 0))
+                text_rect = text.get_rect(center=(
+                    start_x - i * (icon_size + icon_gap),
+                    start_y + icon_size/2 + 10
+                ))
+                self.screen.blit(text, text_rect)
+
+    def update_buffs(self):
+        """버프 상태를 업데이트합니다."""
+        # 만료된 버프 제거
+        expired_buffs = []
+        for buff_type, buff_info in self.active_buffs.items():
+            current_height = self.player.raw_height
+            height_diff = abs(current_height - buff_info['start_height'])
+            if height_diff >= buff_info['duration']:
+                expired_buffs.append(buff_type)
+                # 버프 효과 제거
+                if buff_type == 'jump_boost':
+                    self.player.jump_power_multiplier = 1.0
+                elif buff_type == 'speed_reduce':
+                    self.player.speed_multiplier = 1.0
+
+        for buff_type in expired_buffs:
+            del self.active_buffs[buff_type]
+            # 모든 버프가 만료되었는지 확인
+            if not self.active_buffs:
+                self.player.remove_buff()
+
+    def apply_buff(self, effect):
+        """아이템 효과를 적용합니다."""
+        buff_type = effect['type']
+
+        # 이전 버프 효과 제거
+        if self.active_buffs:
+            old_buff_type = list(self.active_buffs.keys())[0]
+            if old_buff_type == 'jump_boost':
+                self.player.jump_power_multiplier = 1.0
+            elif old_buff_type == 'speed_reduce':
+                self.player.speed_multiplier = 1.0
+            self.active_buffs.clear()
+
+        # 새로운 버프 적용
+        self.active_buffs[buff_type] = {
+            'start_height': effect['start_height'],
+            'duration': effect['duration']
+        }
+
+        # 버프 효과 적용
+        if buff_type == 'jump_boost':
+            self.player.jump_power_multiplier = effect['value']
+        elif buff_type == 'speed_reduce':
+            self.player.speed_multiplier = effect['value']
+
+        # 플레이어의 테두리 색상 변경
+        self.player.set_buff(buff_type)
+
     def update(self):
         """게임 상태를 업데이트합니다."""
         if self.is_in_splash:
@@ -125,11 +269,21 @@ class Game:
         for platform in self.platforms:
             platform.update()
 
+        # 아이템 업데이트
+        for item in self.items:
+            item.update()
+            # 플레이어와 아이템 충돌 체크
+            if not item.is_collected and item.rect.colliderect(self.player.rect):
+                effect = item.collect()
+                self.apply_buff(effect)
+
+        # 버프 상태 업데이트
+        self.update_buffs()
+
         # 장애물 업데이트 및 충돌 체크
         for obstacle in self.obstacles:
             obstacle.update()
             if obstacle.check_collision(self.player):
-                # 충돌 효과는 check_collision 내에서 처리됨
                 pass
 
         # 플레이어 업데이트
@@ -145,8 +299,11 @@ class Game:
         # 플레이어의 화면상 위치 업데이트
         self.player.update_screen_position(self.camera_y)
 
-        # 새로운 플랫폼 생성 로직
+        # 새로운 플랫폼 생성
         self.generate_platforms()
+
+        # 새로운 아이템 생성
+        self.generate_items()
 
     def draw_excel_background(self):
         """엑셀 스타일의 배경을 그립니다."""
@@ -205,12 +362,19 @@ class Game:
             for platform in self.platforms:
                 platform.draw(self.screen, self.camera_y)
 
+            # 아이템 그리기
+            for item in self.items:
+                item.draw(self.screen, self.camera_y)
+
             # 플레이어 그리기
             self.player.draw(self.screen)
 
             # UI 그리기
             self.score_ui.draw(self.screen, self.player.score,
                                self.player.max_height)
+
+            # 버프 상태 그리기
+            self.draw_buff_status()
 
             # 게임오버 화면
             if self.player.is_dead:
@@ -279,5 +443,7 @@ class Game:
         self.clock.tick(FPS)
         return running
 
+
+# 0qZZ3H8)
 
 # 0qZZ3H8)

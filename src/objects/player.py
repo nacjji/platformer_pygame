@@ -16,6 +16,26 @@ class Player:
         self.is_dead = False
         self.raw_height = 0  # 실제 높이 (배율 적용 전)
 
+        # 버프 효과를 위한 속성
+        self.jump_power_multiplier = 1.0  # 점프력 배율
+        self.speed_multiplier = 1.0  # 이동속도 배율
+        self.active_buff_type = None  # 현재 활성화된 버프 타입
+
+    def set_buff(self, buff_type):
+        """현재 활성화된 버프 타입을 설정합니다."""
+        self.active_buff_type = buff_type
+
+    def remove_buff(self):
+        """버프를 제거합니다."""
+        self.active_buff_type = None
+
+    @property
+    def border_color(self):
+        """현재 버프에 따른 테두리 색상을 반환합니다."""
+        if self.active_buff_type:
+            return ITEM_TYPES[self.active_buff_type]['color']
+        return EXCEL_GRID_COLOR
+
     @property
     def rect(self):
         """플레이어의 충돌 박스를 반환합니다."""
@@ -38,11 +58,15 @@ class Player:
 
     def move(self, direction):
         """플레이어를 좌우로 이동시킵니다."""
-        Movement.move_horizontal(self, direction)
+        Movement.move_horizontal(self, direction * self.speed_multiplier)
 
     def jump(self):
         """플레이어가 점프합니다."""
-        Movement.jump(self)
+        if not self.is_jumping:
+            self.velocity_y = JUMP_POWER * self.jump_power_multiplier
+            self.is_jumping = True
+            return True
+        return False
 
     def update(self, platforms):
         """플레이어의 상태를 업데이트합니다."""
@@ -61,13 +85,13 @@ class Player:
             PLAYER_WIDTH,
             PLAYER_HEIGHT
         ))
-        # 엑셀 스타일의 테두리
-        pygame.draw.rect(screen, EXCEL_GRID_COLOR, (
+        # 버프에 따른 테두리 색상 적용
+        pygame.draw.rect(screen, self.border_color, (
             int(self.pos_x - PLAYER_WIDTH/2),
             int(self.screen_y - PLAYER_HEIGHT/2),
             PLAYER_WIDTH,
             PLAYER_HEIGHT
-        ), 1)  # 1픽셀 두께의 테두리
+        ), 2)  # 2픽셀 두께의 테두리
 
     def update_screen_position(self, camera_y):
         """화면상의 위치를 업데이트합니다."""
