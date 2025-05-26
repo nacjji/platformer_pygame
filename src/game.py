@@ -123,55 +123,66 @@ class Game:
 
     def generate_items(self):
         """새로운 아이템을 생성합니다."""
-        # 화면 상단에서 일정 높이 이상 떨어진 아이템은 제거
-        self.items = [item for item in self.items if item.pos_y >
-                      self.camera_y - SCREEN_HEIGHT]
+        try:
+            # 화면 상단에서 일정 높이 이상 떨어진 아이템은 제거
+            self.items = [item for item in self.items if item.pos_y >
+                          self.camera_y - SCREEN_HEIGHT]
 
-        # 새로운 아이템 생성
-        if random.random() < ITEM_SPAWN_CHANCE:
-            # 현재 화면에 보이는 플랫폼들 중에서 선택
-            visible_platforms = [p for p in self.platforms
-                                 if p.y > self.camera_y - SCREEN_HEIGHT
-                                 and p.y < self.camera_y]
+            # 새로운 아이템 생성
+            if random.random() < ITEM_SPAWN_CHANCE:
+                # 현재 화면에 보이는 플랫폼들 중에서 선택
+                visible_platforms = [p for p in self.platforms
+                                     if p.y > self.camera_y - SCREEN_HEIGHT
+                                     and p.y < self.camera_y]
 
-            if visible_platforms:
-                # 가장 가까운 아이템과의 거리 확인
-                min_distance_up = 1000  # 위로 10m(1000픽셀)
-                min_distance_down = 500  # 아래로 5m(500픽셀)
-                valid_platforms = []
+                if visible_platforms:
+                    # 가장 가까운 아이템과의 거리 확인
+                    min_distance_up = 1000  # 위로 10m(1000픽셀)
+                    min_distance_down = 500  # 아래로 5m(500픽셀)
+                    valid_platforms = []
 
-                for platform in visible_platforms:
-                    # 이 플랫폼이 다른 아이템들과 충분히 떨어져 있는지 확인
-                    is_valid = True
-                    for item in self.items:
-                        height_diff = platform.y - item.pos_y
-                        if height_diff > 0:  # 플랫폼이 아이템보다 위에 있는 경우
-                            if height_diff < min_distance_up:
-                                is_valid = False
-                                break
-                        else:  # 플랫폼이 아이템보다 아래에 있는 경우
-                            if abs(height_diff) < min_distance_down:
-                                is_valid = False
-                                break
-                    if is_valid:
-                        valid_platforms.append(platform)
+                    for platform in visible_platforms:
+                        # 이 플랫폼이 다른 아이템들과 충분히 떨어져 있는지 확인
+                        is_valid = True
+                        for item in self.items:
+                            height_diff = platform.y - item.pos_y
+                            if height_diff > 0:  # 플랫폼이 아이템보다 위에 있는 경우
+                                if height_diff < min_distance_up:
+                                    is_valid = False
+                                    break
+                            else:  # 플랫폼이 아이템보다 아래에 있는 경우
+                                if abs(height_diff) < min_distance_down:
+                                    is_valid = False
+                                    break
+                        if is_valid:
+                            valid_platforms.append(platform)
 
-                if valid_platforms:
-                    # 유효한 플랫폼들 중에서 랜덤하게 선택
-                    platform = random.choice(valid_platforms)
+                    if valid_platforms:
+                        # 유효한 플랫폼들 중에서 랜덤하게 선택
+                        platform = random.choice(valid_platforms)
 
-                    # 플랫폼 위에 아이템 생성 (플랫폼의 중앙에서 좌우로 약간의 랜덤성 부여)
-                    x = platform.center_x + \
-                        random.randint(-platform.width//3, platform.width//3)
-                    # 플랫폼 위에 아이템 배치 (플랫폼 높이에서 아이템 크기의 절반만큼 위로)
-                    y = platform.y - ITEM_SIZE/2
+                        # 플랫폼 위에 아이템 생성
+                        x = platform.center_x + \
+                            random.randint(-platform.width//3,
+                                           platform.width//3)
+                        y = platform.y - ITEM_SIZE/2
 
-                    # 랜덤하게 아이템 타입 선택
-                    item_type = random.choice(list(ITEM_TYPES.keys()))
+                        # 랜덤하게 아이템 타입 선택
+                        item_type = random.choice(list(ITEM_TYPES.keys()))
 
-                    # 새 아이템 생성
-                    new_item = Item(x, y, item_type)
-                    self.items.append(new_item)
+                        # 새 아이템 생성
+                        new_item = Item(x, y, item_type)
+                        self.items.append(new_item)
+
+                        # 아이템 수 제한
+                        if len(self.items) > 50:  # 최대 50개로 제한
+                            print("Item limit reached, removing oldest items")
+                            self.items = self.items[-50:]  # 가장 최근 50개만 유지
+
+        except Exception as e:
+            print(f"Item Generation Error: {str(e)}")
+            print(f"Error occurred at: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+            print(f"Current item count: {len(self.items)}")
 
     def draw_buff_status(self):
         """우측 상단에 버프 상태를 표시합니다."""
@@ -313,94 +324,106 @@ class Game:
 
     def update(self):
         """게임 상태를 업데이트합니다."""
-        if self.is_in_splash:
-            return
+        try:
+            if self.is_in_splash:
+                return
 
-        if self.player.is_dead:
-            return
+            if self.player.is_dead:
+                return
 
-        # 성능 모니터링 시작
-        frame_start = time.time()
+            # 성능 모니터링 시작
+            frame_start = time.time()
 
-        # 키보드 입력 처리
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]:
-            self.player.move(-1)
-        if keys[pygame.K_RIGHT]:
-            self.player.move(1)
+            # 키보드 입력 처리
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_LEFT]:
+                self.player.move(-1)
+            if keys[pygame.K_RIGHT]:
+                self.player.move(1)
 
-        # 플랫폼 업데이트
-        for platform in self.platforms:
-            platform.update()
+            # 플랫폼 업데이트
+            for platform in self.platforms:
+                platform.update()
 
-        # 아이템 업데이트
-        for item in self.items:
-            item.update()
-            # 플레이어와 아이템 충돌 체크
-            if not item.is_collected and item.rect.colliderect(self.player.rect):
-                effect = item.collect()
-                self.apply_buff(effect)
+            # 아이템 업데이트
+            for item in self.items:
+                item.update()
+                # 플레이어와 아이템 충돌 체크
+                if not item.is_collected and item.rect.colliderect(self.player.rect):
+                    effect = item.collect()
+                    self.apply_buff(effect)
 
-        # 버프 상태 업데이트
-        self.update_buffs()
+            # 버프 상태 업데이트
+            self.update_buffs()
 
-        # 장애물 업데이트 및 충돌 체크
-        for obstacle in self.obstacles:
-            obstacle.update()
-            if obstacle.check_collision(self.player):
-                pass
+            # 장애물 업데이트 및 충돌 체크
+            for obstacle in self.obstacles:
+                obstacle.update()
+                if obstacle.check_collision(self.player):
+                    pass
 
-        # 플레이어 업데이트
-        self.player.update(self.platforms)
+            # 플레이어 업데이트
+            self.player.update(self.platforms)
 
-        # 점수 업데이트
-        prev_score = self.player.score
-        self.player.update_score()
+            # 점수 업데이트
+            prev_score = self.player.score
+            self.player.update_score()
 
-        # 카메라 업데이트
-        self.update_camera()
+            # 카메라 업데이트
+            self.update_camera()
 
-        # 플레이어의 화면상 위치 업데이트
-        self.player.update_screen_position(self.camera_y)
+            # 플레이어의 화면상 위치 업데이트
+            self.player.update_screen_position(self.camera_y)
 
-        # 새로운 플랫폼 생성
-        self.generate_platforms()
+            # 새로운 플랫폼 생성
+            self.generate_platforms()
 
-        # 새로운 아이템 생성
-        self.generate_items()
+            # 새로운 아이템 생성
+            self.generate_items()
 
-        # 성능 모니터링
-        frame_time = time.time() - frame_start
-        self.frame_times.append(frame_time)
+            # 성능 모니터링
+            frame_time = time.time() - frame_start
+            self.frame_times.append(frame_time)
 
-        # 1초마다 성능 통계 업데이트
-        current_time = time.time()
-        if current_time - self.last_fps_check >= 1.0:
-            if self.frame_times:
-                avg_frame_time = sum(self.frame_times) / len(self.frame_times)
-                fps = 1.0 / avg_frame_time if avg_frame_time > 0 else 0
-                self.fps_history.append(fps)
-                self.platform_count_history.append(len(self.platforms))
-                self.item_count_history.append(len(self.items))
+            # 1초마다 성능 통계 업데이트
+            current_time = time.time()
+            if current_time - self.last_fps_check >= 1.0:
+                if self.frame_times:
+                    avg_frame_time = sum(self.frame_times) / \
+                        len(self.frame_times)
+                    fps = 1.0 / avg_frame_time if avg_frame_time > 0 else 0
+                    self.fps_history.append(fps)
+                    self.platform_count_history.append(len(self.platforms))
+                    self.item_count_history.append(len(self.items))
 
-                # 성능 이슈 체크
-                if fps < 30:  # FPS가 30 미만이면 경고
-                    print(f"Performance Warning: Low FPS ({fps:.1f})")
-                    print(
-                        f"Platforms: {len(self.platforms)}, Items: {len(self.items)}")
+                    # 성능 이슈 체크
+                    if fps < 30:  # FPS가 30 미만이면 경고
+                        print(f"Performance Warning: Low FPS ({fps:.1f})")
+                        print(
+                            f"Platforms: {len(self.platforms)}, Items: {len(self.items)}")
 
-                # 메모리 사용량이 너무 많으면 경고
-                if len(self.platforms) > 100 or len(self.items) > 50:
-                    print(f"Memory Warning: Too many objects")
-                    print(
-                        f"Platforms: {len(self.platforms)}, Items: {len(self.items)}")
+                    # 메모리 사용량이 너무 많으면 경고
+                    if len(self.platforms) > 100 or len(self.items) > 50:
+                        print(f"Memory Warning: Too many objects")
+                        print(
+                            f"Platforms: {len(self.platforms)}, Items: {len(self.items)}")
 
-                # 프레임 시간이 너무 길면 경고
-                if avg_frame_time > 0.033:  # 30 FPS 기준
-                    print(f"Frame Time Warning: {avg_frame_time*1000:.1f}ms")
+                    # 프레임 시간이 너무 길면 경고
+                    if avg_frame_time > 0.033:  # 30 FPS 기준
+                        print(
+                            f"Frame Time Warning: {avg_frame_time*1000:.1f}ms")
 
-            self.frame_times = []
-            self.last_fps_check = current_time
+                self.frame_times = []
+                self.last_fps_check = current_time
+
+        except Exception as e:
+            print(f"Game Update Error: {str(e)}")
+            print(f"Error occurred at: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+            print(
+                f"Game state: Platforms={len(self.platforms)}, Items={len(self.items)}")
+            print(
+                f"Player position: x={self.player.pos_x}, y={self.player.pos_y}")
+            raise  # 예외를 다시 발생시켜 게임이 멈추도록 함
 
     def draw_excel_background(self):
         """엑셀 스타일의 배경을 그립니다."""
@@ -519,26 +542,43 @@ class Game:
 
     def generate_platforms(self):
         """필요한 경우 새로운 플랫폼을 생성합니다."""
-        # 가장 높은 플랫폼 찾기
-        highest_platform = min(self.platforms, key=lambda p: p.y)
+        try:
+            # 가장 높은 플랫폼 찾기
+            highest_platform = min(self.platforms, key=lambda p: p.y)
 
-        # 플레이어보다 화면 높이의 2배 위까지 미리 플랫폼 생성
-        while highest_platform.y > self.player.pos_y - SCREEN_HEIGHT * 2:
-            new_platform = Platform.create_random(
-                highest_platform.x,  # 이전 플랫폼의 실제 x 좌표 전달
-                highest_platform.y,
-                highest_platform.width
-            )
-            self.platforms.append(new_platform)
-            highest_platform = new_platform
+            # 플레이어보다 화면 높이의 2배 위까지 미리 플랫폼 생성
+            while highest_platform.y > self.player.pos_y - SCREEN_HEIGHT * 2:
+                new_platform = Platform.create_random(
+                    highest_platform.x,  # 이전 플랫폼의 실제 x 좌표 전달
+                    highest_platform.y,
+                    highest_platform.width
+                )
+                self.platforms.append(new_platform)
+                highest_platform = new_platform
+
+                # 플랫폼 수 제한
+                if len(self.platforms) > 200:  # 최대 200개로 제한
+                    print("Platform limit reached, removing oldest platforms")
+                    self.platforms = self.platforms[-200:]  # 가장 최근 200개만 유지
+                    break
+
+        except Exception as e:
+            print(f"Platform Generation Error: {str(e)}")
+            print(f"Error occurred at: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+            print(f"Current platform count: {len(self.platforms)}")
 
     def run(self):
         """게임 메인 루프를 실행합니다."""
-        running = self.handle_events()
-        self.update()
-        self.draw()
-        self.clock.tick(FPS)
-        return running
+        try:
+            running = self.handle_events()
+            self.update()
+            self.draw()
+            self.clock.tick(FPS)
+            return running
+        except Exception as e:
+            print(f"Game Loop Error: {str(e)}")
+            print(f"Error occurred at: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+            return False  # 게임 종료
 
 
 # 0qZZ3H8)
