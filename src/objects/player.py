@@ -31,9 +31,13 @@ class Player:
         # 버프 관리 시스템
         self.active_buffs = set()  # 현재 활성화된 모든 버프
         self.positive_buff = None  # 현재 활성화된 긍정 버프 (연두색, 노란색)
+        self.buff_start_height = None  # 버프 적용 시점의 높이
 
     def set_buff(self, buff_type):
         """현재 활성화된 버프 타입을 설정합니다."""
+        # 버프 적용 시점의 높이 저장
+        self.buff_start_height = self.raw_height
+
         # 긍정 버프 (연두색, 노란색) 처리
         if buff_type in ['double_jump', 'jump_boost']:
             if self.positive_buff is None or self.positive_buff == buff_type:
@@ -47,7 +51,7 @@ class Player:
             return
 
         # 중첩 가능한 버프 (빨간색, 보라색, 하늘색, 주황색) 처리
-        if buff_type in ['key_reverse', 'ice_slide']:
+        if buff_type in ['key_reverse', 'ice_slide', 'transform']:
             self.active_buffs.add(buff_type)
             if buff_type == 'key_reverse':
                 self.is_key_reversed = True
@@ -55,7 +59,7 @@ class Player:
                 self.is_sliding = True
                 self.velocity_x = 0
 
-    def remove_buff(self, buff_type):
+    def remove_buff(self, buff_type, platforms):
         """특정 버프를 제거합니다."""
         if buff_type == self.positive_buff:
             self.positive_buff = None
@@ -73,6 +77,11 @@ class Player:
             elif buff_type == 'ice_slide':
                 self.is_sliding = False
                 self.velocity_x = 0
+            elif buff_type == 'transform':
+                # transform 발판을 원래 상태로 복구
+                for platform in platforms:
+                    if platform.is_transformed:
+                        platform.revert_to_original()
 
     def remove_all_buffs(self):
         """모든 버프를 제거합니다."""
@@ -182,9 +191,13 @@ class Player:
             # 공중에서는 슬라이딩 속도를 즉시 0으로 만듦
             self.velocity_x = 0
 
-        # 하늘색 아이템 해제 조건: 5미터 이상 내려갔을 때
-        if self.is_sliding and self.raw_height - self.score >= 5:
-            self.remove_buff('ice_slide')
+        # 버프 해제 조건: 상승 10미터 혹은 하강 5미터
+        if self.buff_start_height is not None:
+            height_change = self.raw_height - self.buff_start_height
+            if height_change >= 10 or height_change <= -5:
+                for buff_type in list(self.active_buffs):
+                    self.remove_buff(buff_type, platforms)
+                self.buff_start_height = None
 
         # 착지 상태가 아니면 점프 불가능
         if not is_landing:
