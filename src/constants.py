@@ -71,7 +71,7 @@ MOVING_PLATFORM_RANGE = 100  # 움직이는 거리
 
 # 아이템 설정
 ITEM_SIZE = 15  # 아이템의 크기
-ITEM_SPAWN_CHANCE = 0.014  # 아이템 생성 확률 (0.4%)
+ITEM_SPAWN_CHANCE = 0.034  # 아이템 생성 확률 (0.4%)
 
 # 아이템 종류
 ITEM_TYPES = {
@@ -104,5 +104,11 @@ ITEM_TYPES = {
         'duration': 10,  # 지속 높이 (m)
         'effect': 'platform_width',
         'value': 10  # 플랫폼 너비
+    },
+    'ice_slide': {
+        'color': (135, 206, 235),  # 하늘색
+        'duration': 10,  # 지속 높이 (m)
+        'effect': 'ice_slide',
+        'value': 0.5  # 미끄러짐 속도
     }
 }

@@ -159,8 +159,16 @@ class Platform:
         # 사라진 상태의 플랫폼은 밟을 수 없음
         if self.is_vanish and not self.is_visible:
             return False
-        return (self.x <= x <= self.right and
-                self.y - 5 <= y <= self.y + 5)  # 약간의 여유 범위를 둠
+
+        # x 좌표가 발판 범위 내에 있는지 확인 (약간의 여유 추가)
+        x_margin = 2  # x축 여유 범위
+        is_within_x = self.x - x_margin <= x <= self.right + x_margin
+
+        # y 좌표가 발판 상단 근처에 있는지 확인 (더 넓은 범위)
+        y_margin = 10  # y축 여유 범위
+        is_within_y = self.y - y_margin <= y <= self.y + y_margin
+
+        return is_within_x and is_within_y
 
     def is_within_reach(self, x, y, max_jump_height, max_jump_width):
         """현재 위치에서 이 발판에 도달할 수 있는지 확인합니다."""

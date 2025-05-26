@@ -10,6 +10,7 @@ class Player:
         self.pos_y = y  # 실제 게임 월드에서의 y 위치
         self.screen_y = y  # 화면상의 y 위치
         self.velocity_y = 0
+        self.velocity_x = 0  # x축 속도 추가
         self.is_jumping = False
         self.can_double_jump = False  # 2단 점프 가능 여부
         self.has_double_jumped = False  # 2단 점프 사용 여부
@@ -25,6 +26,8 @@ class Player:
         self.speed_multiplier = 1.0  # 이동속도 배율
         self.is_key_reversed = False  # 키 반전 여부
         self.active_buff_type = None  # 현재 활성화된 버프 타입
+        self.is_sliding = False  # 슬라이딩 상태
+        self.slide_friction = 0.98  # 슬라이딩 마찰력
 
     def set_buff(self, buff_type):
         """현재 활성화된 버프 타입을 설정합니다."""
@@ -37,6 +40,8 @@ class Player:
             self.remaining_jump_boosts = ITEM_TYPES[buff_type]['duration']
         elif buff_type == 'key_reverse':
             self.is_key_reversed = True
+        elif buff_type == 'ice_slide':
+            self.is_sliding = True
 
     def remove_buff(self):
         """버프를 제거합니다."""
@@ -48,6 +53,8 @@ class Player:
         self.jump_power_multiplier = 1.0
         self.speed_multiplier = 1.0
         self.is_key_reversed = False
+        self.is_sliding = False
+        self.velocity_x = 0  # 슬라이딩 중지
 
     @property
     def border_color(self):
@@ -81,7 +88,16 @@ class Player:
         # 키가 반전된 경우 방향을 반대로
         if self.is_key_reversed:
             direction = -direction
-        Movement.move_horizontal(self, direction * self.speed_multiplier)
+
+        if self.is_sliding:
+            # 슬라이딩 중에는 속도를 누적
+            self.velocity_x += direction * PLAYER_SPEED * self.speed_multiplier * 0.1
+            # 최대 속도 제한
+            self.velocity_x = max(
+                min(self.velocity_x, PLAYER_SPEED * 2), -PLAYER_SPEED * 2)
+        else:
+            # 일반 이동
+            Movement.move_horizontal(self, direction * self.speed_multiplier)
 
     def jump(self):
         """플레이어가 점프합니다."""
@@ -117,6 +133,24 @@ class Player:
             if platform.is_point_above(self.pos_x, self.bottom):
                 is_landing = True
                 break
+
+        # 슬라이딩 상태일 때 x축 속도 적용 (발판에 있을 때만)
+        if self.is_sliding and is_landing:
+            self.pos_x += self.velocity_x
+            # 화면 경계 체크
+            if self.pos_x < PLAYER_WIDTH/2:
+                self.pos_x = PLAYER_WIDTH/2
+                self.velocity_x = 0
+            elif self.pos_x > SCREEN_WIDTH - PLAYER_WIDTH/2:
+                self.pos_x = SCREEN_WIDTH - PLAYER_WIDTH/2
+                self.velocity_x = 0
+            # 마찰력 적용
+            self.velocity_x *= self.slide_friction
+        elif self.is_sliding and not is_landing:
+            # 공중에서는 슬라이딩 속도를 점진적으로 감소
+            self.velocity_x *= 0.95
+            if abs(self.velocity_x) < 0.1:
+                self.velocity_x = 0
 
         # 착지 상태가 아니면 점프 불가능
         if not is_landing:

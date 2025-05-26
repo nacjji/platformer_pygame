@@ -228,8 +228,8 @@ class Game:
                     # 버프 효과 제거
                     if buff_type == 'jump_boost':
                         self.player.jump_power_multiplier = 1.0
-            # 속도 감소, 키 반전, 플랫폼 너비 변경의 경우 높이로 판단
-            elif buff_type in ['speed_reduce', 'key_reverse', 'platform_width']:
+            # 속도 감소, 키 반전, 플랫폼 너비 변경, 슬라이딩의 경우 높이로 판단
+            elif buff_type in ['speed_reduce', 'key_reverse', 'platform_width', 'ice_slide']:
                 current_height = self.player.raw_height
                 height_diff = current_height - buff_info['start_height']
                 # 10m 위로 올라가거나 5m 아래로 내려가면 해제
@@ -245,9 +245,10 @@ class Game:
                             for platform in self.platforms:
                                 if id(platform) == platform_id:
                                     platform.width = original_width
-                                    if platform.is_transforming:
-                                        platform.initial_width = original_width
                         self.original_platform_widths.clear()
+                    elif buff_type == 'ice_slide':
+                        self.player.is_sliding = False
+                        self.player.velocity_x = 0
 
         for buff_type in expired_buffs:
             del self.active_buffs[buff_type]
