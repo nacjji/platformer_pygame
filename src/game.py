@@ -227,14 +227,17 @@ class Game:
                     # 버프 효과 제거
                     if buff_type == 'jump_boost':
                         self.player.jump_power_multiplier = 1.0
-            # 속도 감소의 경우 높이로 판단
-            elif buff_type == 'speed_reduce':
+            # 속도 감소나 키 반전의 경우 높이로 판단
+            elif buff_type in ['speed_reduce', 'key_reverse']:
                 current_height = self.player.raw_height
                 height_diff = current_height - buff_info['start_height']
                 # 10m 위로 올라가거나 5m 아래로 내려가면 해제
                 if height_diff >= 10 or height_diff <= -5:
                     expired_buffs.append(buff_type)
-                    self.player.speed_multiplier = 1.0
+                    if buff_type == 'speed_reduce':
+                        self.player.speed_multiplier = 1.0
+                    elif buff_type == 'key_reverse':
+                        self.player.is_key_reversed = False
 
         for buff_type in expired_buffs:
             del self.active_buffs[buff_type]

@@ -92,5 +92,11 @@ ITEM_TYPES = {
         'duration': 5,  # 사용 가능 횟수
         'effect': 'double_jump',
         'value': 1.0  # 이동속도 그대로
+    },
+    'key_reverse': {
+        'color': (128, 0, 128),  # 보라색
+        'duration': 10,  # 지속 높이 (m)
+        'effect': 'key_reverse',
+        'value': 1.0  # 이동속도 그대로
     }
 }

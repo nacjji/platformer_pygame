@@ -23,6 +23,7 @@ class Player:
         # 버프 효과를 위한 속성
         self.jump_power_multiplier = 1.0  # 점프력 배율
         self.speed_multiplier = 1.0  # 이동속도 배율
+        self.is_key_reversed = False  # 키 반전 여부
         self.active_buff_type = None  # 현재 활성화된 버프 타입
 
     def set_buff(self, buff_type):
@@ -34,6 +35,8 @@ class Player:
             self.remaining_double_jumps = ITEM_TYPES[buff_type]['duration']
         elif buff_type == 'jump_boost':
             self.remaining_jump_boosts = ITEM_TYPES[buff_type]['duration']
+        elif buff_type == 'key_reverse':
+            self.is_key_reversed = True
 
     def remove_buff(self):
         """버프를 제거합니다."""
@@ -43,6 +46,8 @@ class Player:
         self.remaining_double_jumps = 0
         self.remaining_jump_boosts = 0
         self.jump_power_multiplier = 1.0
+        self.speed_multiplier = 1.0
+        self.is_key_reversed = False
 
     @property
     def border_color(self):
@@ -73,6 +78,9 @@ class Player:
 
     def move(self, direction):
         """플레이어를 좌우로 이동시킵니다."""
+        # 키가 반전된 경우 방향을 반대로
+        if self.is_key_reversed:
+            direction = -direction
         Movement.move_horizontal(self, direction * self.speed_multiplier)
 
     def jump(self):
