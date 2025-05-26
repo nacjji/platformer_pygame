@@ -2,8 +2,6 @@ import pygame
 
 from src.ui.score import ScoreUI
 from src.ui.splash_screen import SplashScreen
-from src.ui.nickname_screen import NicknameScreen
-from src.ui.ranking_system import RankingSystem
 from .constants import *
 from .objects.player import Player
 from .objects.platform import Platform
@@ -35,10 +33,7 @@ class Game:
             button_width, button_height)
 
         # 게임 상태 추가
-        self.ranking_system = RankingSystem()
-        self.is_in_nickname = True  # 닉네임 입력 화면 상태
-        self.is_in_splash = False  # 스플래시 화면 상태
-        self.nickname_screen = NicknameScreen(self.ranking_system)
+        self.is_in_splash = True  # 스플래시 화면 상태
         self.splash_screen = SplashScreen()
 
         # 게임 객체 초기화
@@ -85,14 +80,8 @@ class Game:
             if event.type == pygame.QUIT:
                 return False
 
-            # 닉네임 입력 화면일 때
-            if self.is_in_nickname:
-                if self.nickname_screen.handle_event(event):
-                    self.is_in_nickname = False
-                    self.is_in_splash = True
-
             # 스플래시 화면일 때
-            elif self.is_in_splash:
+            if self.is_in_splash:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if self.splash_screen.handle_click(event.pos):
                         Platform.set_difficulty(
@@ -119,7 +108,7 @@ class Game:
 
     def update(self):
         """게임 상태를 업데이트합니다."""
-        if self.is_in_nickname or self.is_in_splash:
+        if self.is_in_splash:
             return
 
         if self.player.is_dead:
@@ -150,12 +139,6 @@ class Game:
         prev_score = self.player.score
         self.player.update_score()
 
-        # 플레이어가 죽었을 때 랭킹 업데이트
-        if self.player.is_dead and prev_score > 0:
-            self.ranking_system.add_score(
-                self.ranking_system.current_player,
-                self.player.score)
-
         # 카메라 업데이트
         self.update_camera()
 
@@ -165,14 +148,58 @@ class Game:
         # 새로운 플랫폼 생성 로직
         self.generate_platforms()
 
+    def draw_excel_background(self):
+        """엑셀 스타일의 배경을 그립니다."""
+        # 배경을 흰색으로 채우기
+        self.screen.fill(WHITE)
+
+        # 열 헤더 그리기
+        columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+        small_font = pygame.font.Font(None, 24)
+
+        # 행 번호와 열 헤더 배경
+        pygame.draw.rect(self.screen, EXCEL_COLUMN_HEADER_COLOR,
+                         (0, 0, SCREEN_WIDTH, EXCEL_HEADER_HEIGHT))
+
+        # 열 헤더 텍스트
+        for i, col in enumerate(columns):
+            x = i * EXCEL_CELL_WIDTH + EXCEL_CELL_WIDTH//2
+            text = small_font.render(col, True, EXCEL_HEADER_FONT_COLOR)
+            text_rect = text.get_rect(center=(x, EXCEL_HEADER_HEIGHT//2))
+            self.screen.blit(text, text_rect)
+
+        # 행 번호
+        visible_rows = SCREEN_HEIGHT // EXCEL_CELL_HEIGHT
+        start_row = int(self.camera_y // EXCEL_CELL_HEIGHT)
+
+        for i in range(visible_rows + 2):
+            row_num = i + start_row
+            y = i * EXCEL_CELL_HEIGHT + EXCEL_HEADER_HEIGHT
+            text = small_font.render(
+                str(row_num + 1), True, EXCEL_HEADER_FONT_COLOR)
+            text_rect = text.get_rect(
+                midright=(EXCEL_CELL_WIDTH - 5, y + EXCEL_CELL_HEIGHT//2))
+            self.screen.blit(text, text_rect)
+
+        # 격자 그리기
+        for i in range(visible_rows + 2):
+            y = i * EXCEL_CELL_HEIGHT + EXCEL_HEADER_HEIGHT
+            pygame.draw.line(self.screen, EXCEL_GRID_COLOR,
+                             (0, y), (SCREEN_WIDTH, y))
+
+        for i in range(len(columns) + 1):
+            x = i * EXCEL_CELL_WIDTH
+            pygame.draw.line(self.screen, EXCEL_GRID_COLOR,
+                             (x, 0), (x, SCREEN_HEIGHT))
+
     def draw(self):
         """게임을 화면에 그립니다."""
-        if self.is_in_nickname:
-            self.nickname_screen.draw(self.screen)
-        elif self.is_in_splash:
+        if self.is_in_splash:
+            self.screen.fill(WHITE)  # 스플래시 화면 배경을 흰색으로
             self.splash_screen.draw(self.screen)
         else:
-            self.screen.fill(BLACK)
+            # 엑셀 스타일 배경 그리기
+            self.draw_excel_background()
 
             # 발판 그리기
             for platform in self.platforms:
@@ -187,52 +214,42 @@ class Game:
 
             # 게임오버 화면
             if self.player.is_dead:
-                # 반투명한 검은색 오버레이
+                # 반투명한 흰색 오버레이 (엑셀 스타일)
                 overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-                overlay.fill(BLACK)
-                overlay.set_alpha(180)
+                overlay.fill(WHITE)
+                overlay.set_alpha(220)
                 self.screen.blit(overlay, (0, 0))
 
                 # 게임오버 텍스트
-                game_over_text = self.big_font.render('GAME OVER', True, RED)
+                game_over_text = self.big_font.render('Game Over', True, RED)
                 game_over_rect = game_over_text.get_rect(
                     center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 - 150))
                 self.screen.blit(game_over_text, game_over_rect)
 
-                # 최종 점수와 순위
-                rank = self.ranking_system.get_rank_for_score(
-                    self.player.max_height)
+                # 최종 점수
                 final_score_text = self.font.render(
-                    f'Final Score: {self.player.max_height}m (Rank: {rank})', True, WHITE)
+                    f'Final Score: {self.player.max_height}m', True, EXCEL_FONT_COLOR)
                 final_score_rect = final_score_text.get_rect(
                     center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 - 100))
                 self.screen.blit(final_score_text, final_score_rect)
 
-                # 랭킹 표시
-                rankings = self.ranking_system.format_rankings()
-                start_y = SCREEN_HEIGHT//2 - 50
-                for i, rank_text in enumerate(rankings[:5]):
-                    rank_surface = self.font.render(rank_text, True, WHITE)
-                    rank_rect = rank_surface.get_rect(
-                        center=(SCREEN_WIDTH//2, start_y + i * 30))
-                    self.screen.blit(rank_surface, rank_rect)
-
-                # Retry 버튼
-                pygame.draw.rect(self.screen, (100, 100, 255),
+                # Retry 버튼 (엑셀 스타일)
+                pygame.draw.rect(self.screen, EXCEL_SELECTED_CELL_COLOR,
                                  self.retry_button)
-                pygame.draw.rect(self.screen, WHITE, self.retry_button, 2)
-                retry_text = self.font.render("RETRY", True, WHITE)
+                pygame.draw.rect(self.screen, EXCEL_GRID_COLOR,
+                                 self.retry_button, 1)
+                retry_text = self.font.render("RETRY", True, EXCEL_FONT_COLOR)
                 retry_rect = retry_text.get_rect(
                     center=self.retry_button.center)
                 self.screen.blit(retry_text, retry_rect)
 
-                # Change Difficulty 버튼
-                pygame.draw.rect(self.screen, (100, 100, 255),
+                # Change Difficulty 버튼 (엑셀 스타일)
+                pygame.draw.rect(self.screen, EXCEL_SELECTED_CELL_COLOR,
                                  self.change_difficulty_button)
-                pygame.draw.rect(self.screen, WHITE,
-                                 self.change_difficulty_button, 2)
+                pygame.draw.rect(self.screen, EXCEL_GRID_COLOR,
+                                 self.change_difficulty_button, 1)
                 change_text = self.font.render(
-                    "Change Difficulty", True, WHITE)
+                    "Change Difficulty", True, EXCEL_FONT_COLOR)
                 change_rect = change_text.get_rect(
                     center=self.change_difficulty_button.center)
                 self.screen.blit(change_text, change_rect)

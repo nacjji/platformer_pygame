@@ -5,14 +5,24 @@ SCREEN_WIDTH = 450
 SCREEN_HEIGHT = 800
 FPS = 60
 
+# 엑셀 스타일 설정
+EXCEL_CELL_WIDTH = 60
+EXCEL_CELL_HEIGHT = 25
+EXCEL_HEADER_HEIGHT = 30
+EXCEL_COLUMN_HEADER_COLOR = (240, 240, 240)
+EXCEL_GRID_COLOR = (220, 220, 220)
+EXCEL_SELECTED_CELL_COLOR = (217, 226, 243)
+EXCEL_FONT_COLOR = (60, 60, 60)
+EXCEL_HEADER_FONT_COLOR = (80, 80, 80)
+
 # 카메라 설정
 CAMERA_FOLLOW_THRESHOLD = SCREEN_HEIGHT * 0.4  # 화면 40% 지점부터 카메라가 따라감
 
 # 색상
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
-GREEN = (100, 200, 100)  # 발판 색상
-RED = (255, 0, 0)  # 게임오버 텍스트 색상
+GREEN = (200, 200, 200)  # 발판 색상을 엑셀 스타일로 변경
+RED = (192, 0, 0)  # 엑셀 스타일의 빨간색
 
 # 플레이어 설정
 PLAYER_WIDTH = 20  # 플레이어 너비

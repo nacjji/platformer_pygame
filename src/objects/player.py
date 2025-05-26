@@ -53,20 +53,20 @@ class Player:
 
     def draw(self, screen):
         """플레이어를 화면에 그립니다."""
-        # 검은색 바탕 사각형
+        # 엑셀 스타일의 선택된 셀처럼 보이게 그리기
         pygame.draw.rect(screen, BLACK, (
             int(self.pos_x - PLAYER_WIDTH/2),
             int(self.screen_y - PLAYER_HEIGHT/2),
             PLAYER_WIDTH,
             PLAYER_HEIGHT
         ))
-        # 하얀색 테두리
-        pygame.draw.rect(screen, WHITE, (
+        # 엑셀 스타일의 테두리
+        pygame.draw.rect(screen, EXCEL_GRID_COLOR, (
             int(self.pos_x - PLAYER_WIDTH/2),
             int(self.screen_y - PLAYER_HEIGHT/2),
             PLAYER_WIDTH,
             PLAYER_HEIGHT
-        ), 2)  # 두께 2픽셀의 테두리
+        ), 1)  # 1픽셀 두께의 테두리
 
     def update_screen_position(self, camera_y):
         """화면상의 위치를 업데이트합니다."""

@@ -10,5 +10,5 @@ class ScoreUI:
     def draw(self, screen, score, max_height):
         """현재 높이와 최고 높이를 화면에 표시합니다."""
         height_text = f"Height: {score}m / {max_height}m"
-        text_surface = self.font.render(height_text, True, WHITE)
+        text_surface = self.font.render(height_text, True, BLACK)
         screen.blit(text_surface, self.pos)
