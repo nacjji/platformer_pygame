@@ -14,6 +14,7 @@ class Player:
         self.score = 0  # 현재 점수 (높이)
         self.max_height = 0  # 도달한 최대 높이
         self.is_dead = False
+        self.raw_height = 0  # 실제 높이 (배율 적용 전)
 
     @property
     def rect(self):
@@ -75,12 +76,17 @@ class Player:
     def update_score(self):
         """점수(높이)를 업데이트합니다."""
         # 시작 위치로부터의 현재 높이를 계산 (위로 갈수록 y값이 작아짐)
-        current_height = abs(
-            int((SCREEN_HEIGHT - self.pos_y) / 100))  # 100픽셀당 1m
+        # SCREEN_HEIGHT - 100 이 시작 위치이므로, 이를 기준으로 계산
+        self.raw_height = max(0, abs(
+            int((SCREEN_HEIGHT - 100 - self.pos_y) / 100)))  # 100픽셀당 1m
+
+        # 난이도 배율 적용
+        current_height = int(
+            self.raw_height * Platform.current_difficulty.score_multiplier)
 
         # 현재 높이를 score에 반영
         self.score = current_height
 
-        # 최고 높이 업데이트
+        # 최고 높이 업데이트 (배율 적용된 값으로)
         if current_height > self.max_height:
             self.max_height = current_height

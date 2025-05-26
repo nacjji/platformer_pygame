@@ -32,11 +32,11 @@ EASY = DifficultySettings(
     moving_platform_chance=0.2,
     transform_min_speed=0.5,
     transform_max_speed=1.1,
-    transform_min_width_ratio=0.2,
+    transform_min_width_ratio=0.6,
     vanish_interval=2000,
     vanish_duration=1000,
     vanish_platform_chance=0.1,
-    score_multiplier=0.5
+    score_multiplier=1
 )
 
 NORMAL = DifficultySettings(
@@ -50,7 +50,7 @@ NORMAL = DifficultySettings(
     vanish_interval=2000,
     vanish_duration=1000,
     vanish_platform_chance=0.2,
-    score_multiplier=1.0
+    score_multiplier=1.5
 )
 
 HARD = DifficultySettings(
@@ -64,7 +64,7 @@ HARD = DifficultySettings(
     vanish_interval=1000,
     vanish_duration=1500,
     vanish_platform_chance=0.3,
-    score_multiplier=1.5
+    score_multiplier=2
 )
 
 # 난이도 설정 매핑

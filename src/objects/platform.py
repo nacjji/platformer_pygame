@@ -20,7 +20,7 @@ class Platform:
         Args:
             x (float): 발판의 x 좌표 (왼쪽 끝 기준)
             y (float): 발판의 y 좌표 (상단 기준)
-            width (float, optional): 발판의 너비. None이면 랜덤한 너비로 생성
+            width (float, optional): 발판의 너비. None이면 최대 너비로 설정
             is_moving (bool): 움직이는 플랫폼인지 여부
             is_transforming (bool): 크기가 변하는 플랫폼인지 여부
             is_vanish (bool): 사라졌다 나타나는 플랫폼인지 여부
@@ -28,8 +28,7 @@ class Platform:
         self.x = x
         self.initial_x = x  # 초기 x 위치 저장
         self.y = y
-        self.initial_width = width if width is not None else random.randint(
-            PLATFORM_MIN_WIDTH, PLATFORM_MAX_WIDTH)
+        self.initial_width = width if width is not None else PLATFORM_MAX_WIDTH  # 랜덤 제거
         self.width = self.initial_width
         self.height = PLATFORM_HEIGHT
         self.min_width = max(PLATFORM_MIN_WIDTH, int(
@@ -193,7 +192,7 @@ class Platform:
         # 첫 번째 발판은 화면 중앙 하단에 생성 (일반 플랫폼으로 고정)
         first_platform = cls(
             x=SCREEN_WIDTH//2 - PLATFORM_MAX_WIDTH//2,
-            y=SCREEN_HEIGHT - 100,
+            y=SCREEN_HEIGHT - 50,  # 화면 하단에 더 가깝게 배치
             width=PLATFORM_MAX_WIDTH
         )
         platforms.append(first_platform)
@@ -223,13 +222,13 @@ class Platform:
         Returns:
             Platform: 생성된 발판
         """
-        # 현재 너비 결정
-        if current_width is None:
+
+        # 현재 너비 결정 (Easy 모드에서는 항상 최대 너비 사용)
+        if current_width is None or cls.current_difficulty.platform_width_decrease == 0:
             width = PLATFORM_MAX_WIDTH
         else:
             width = max(PLATFORM_MIN_WIDTH, current_width -
                         cls.current_difficulty.platform_width_decrease)
-
         # 최대 점프 거리 계산 (수평)
         max_jump_distance = PLAYER_SPEED * abs(2 * JUMP_POWER / GRAVITY)
         safe_jump_distance = max_jump_distance * 0.7
@@ -248,7 +247,7 @@ class Platform:
         y = prev_y - height_gap
 
         # 플랫폼 타입 결정
-        platform_type = random.random()  # 0.0 ~ 1.0 사이의 랜덤 값
+        platform_type = random.random()
 
         # 이전 플랫폼이 사라지는 플랫폼이었다면 일반 또는 움직이는 플랫폼만 생성 가능
         if prev_platform and hasattr(prev_platform, 'is_vanish') and prev_platform.is_vanish:
