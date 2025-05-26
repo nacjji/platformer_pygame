@@ -1,10 +1,9 @@
 import pygame
-import sys
-import random
-import time
 
 from src.ui.score import ScoreUI
 from src.ui.splash_screen import SplashScreen
+from src.ui.nickname_screen import NicknameScreen
+from src.ui.ranking_system import RankingSystem
 from .constants import *
 from .objects.player import Player
 from .objects.platform import Platform
@@ -36,8 +35,11 @@ class Game:
             button_width, button_height)
 
         # 게임 상태 추가
-        self.is_in_splash = True  # 스플래시 화면 상태
-        self.splash_screen = SplashScreen()  # 스플래시 화면 초기화
+        self.ranking_system = RankingSystem()
+        self.is_in_nickname = True  # 닉네임 입력 화면 상태
+        self.is_in_splash = False  # 스플래시 화면 상태
+        self.nickname_screen = NicknameScreen(self.ranking_system)
+        self.splash_screen = SplashScreen()
 
         # 게임 객체 초기화
         self.platforms = []
@@ -78,37 +80,43 @@ class Game:
             if event.type == pygame.QUIT:
                 return False
 
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                # 스플래시 화면일 때
-                if self.is_in_splash:
+            # 닉네임 입력 화면일 때
+            if self.is_in_nickname:
+                if self.nickname_screen.handle_event(event):
+                    self.is_in_nickname = False
+                    self.is_in_splash = True
+
+            # 스플래시 화면일 때
+            elif self.is_in_splash:
+                if event.type == pygame.MOUSEBUTTONDOWN:
                     if self.splash_screen.handle_click(event.pos):
-                        # 선택된 난이도 적용
                         Platform.set_difficulty(
                             self.splash_screen.selected_difficulty)
-                        self.is_in_splash = False  # 게임 시작
+                        self.is_in_splash = False
                         self.reset_game()
-                # 게임 오버 화면일 때
-                elif self.player.is_dead:
-                    if self.retry_button.collidepoint(event.pos):
-                        self.reset_game()
-                    elif self.change_difficulty_button.collidepoint(event.pos):
-                        self.is_in_splash = True  # 스플래시 화면으로 돌아가기
 
-            if not self.is_in_splash:  # 게임 플레이 중일 때만
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_SPACE and not self.player.is_dead:
-                        self.player.jump()
-                    elif event.key == pygame.K_r and self.player.is_dead:
-                        self.reset_game()
+            # 게임 플레이 중일 때
+            else:
+                if self.player.is_dead:
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if self.retry_button.collidepoint(event.pos):
+                            self.reset_game()
+                        elif self.change_difficulty_button.collidepoint(event.pos):
+                            self.is_in_splash = True
+                else:
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_SPACE:
+                            self.player.jump()
+                        elif event.key == pygame.K_r:
+                            self.reset_game()
 
         return True
 
     def update(self):
         """게임 상태를 업데이트합니다."""
-        if self.is_in_splash:
-            return  # 스플래시 화면에서는 업데이트하지 않음
+        if self.is_in_nickname or self.is_in_splash:
+            return
 
-        # 게임오버 상태에서는 업데이트하지 않음
         if self.player.is_dead:
             return
 
@@ -127,7 +135,14 @@ class Game:
         self.player.update(self.platforms)
 
         # 점수 업데이트
+        prev_score = self.player.score
         self.player.update_score()
+
+        # 플레이어가 죽었을 때 랭킹 업데이트
+        if self.player.is_dead and prev_score > 0:
+            self.ranking_system.add_score(
+                self.ranking_system.current_player,
+                self.player.score)
 
         # 카메라 업데이트
         self.update_camera()
@@ -140,7 +155,9 @@ class Game:
 
     def draw(self):
         """게임을 화면에 그립니다."""
-        if self.is_in_splash:
+        if self.is_in_nickname:
+            self.nickname_screen.draw(self.screen)
+        elif self.is_in_splash:
             self.splash_screen.draw(self.screen)
         else:
             self.screen.fill(BLACK)
@@ -153,34 +170,44 @@ class Game:
             self.player.draw(self.screen)
 
             # UI 그리기
-            score_text = f"Height: {self.player.score}m"
-            text_surface = self.font.render(score_text, True, WHITE)
-            self.screen.blit(text_surface, (10, 10))
+            self.score_ui.draw(self.screen, self.player.score,
+                               self.player.max_height)
 
             # 게임오버 화면
             if self.player.is_dead:
                 # 반투명한 검은색 오버레이
                 overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
                 overlay.fill(BLACK)
-                overlay.set_alpha(180)  # 더 진한 오버레이
+                overlay.set_alpha(180)
                 self.screen.blit(overlay, (0, 0))
 
                 # 게임오버 텍스트
                 game_over_text = self.big_font.render('GAME OVER', True, RED)
                 game_over_rect = game_over_text.get_rect(
-                    center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 - 80))
+                    center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 - 150))
                 self.screen.blit(game_over_text, game_over_rect)
 
-                # 최종 점수
+                # 최종 점수와 순위
+                rank = self.ranking_system.get_rank_for_score(
+                    self.player.max_height)
                 final_score_text = self.font.render(
-                    f'Final Score: {self.player.score}m', True, WHITE)
+                    f'Final Score: {self.player.max_height}m (Rank: {rank})', True, WHITE)
                 final_score_rect = final_score_text.get_rect(
-                    center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 - 20))
+                    center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 - 100))
                 self.screen.blit(final_score_text, final_score_rect)
+
+                # 랭킹 표시
+                rankings = self.ranking_system.format_rankings()
+                start_y = SCREEN_HEIGHT//2 - 50
+                for i, rank_text in enumerate(rankings[:5]):
+                    rank_surface = self.font.render(rank_text, True, WHITE)
+                    rank_rect = rank_surface.get_rect(
+                        center=(SCREEN_WIDTH//2, start_y + i * 30))
+                    self.screen.blit(rank_surface, rank_rect)
 
                 # Retry 버튼
                 pygame.draw.rect(self.screen, (100, 100, 255),
-                                 self.retry_button)  # 파란색 배경
+                                 self.retry_button)
                 pygame.draw.rect(self.screen, WHITE, self.retry_button, 2)
                 retry_text = self.font.render("RETRY", True, WHITE)
                 retry_rect = retry_text.get_rect(
@@ -189,7 +216,7 @@ class Game:
 
                 # Change Difficulty 버튼
                 pygame.draw.rect(self.screen, (100, 100, 255),
-                                 self.change_difficulty_button)  # 파란색 배경
+                                 self.change_difficulty_button)
                 pygame.draw.rect(self.screen, WHITE,
                                  self.change_difficulty_button, 2)
                 change_text = self.font.render(
@@ -214,10 +241,6 @@ class Game:
             )
             self.platforms.append(new_platform)
             highest_platform = new_platform
-
-        # 화면에서 너무 멀리 떨어진 플랫폼 제거 (메모리 관리)
-        self.platforms = [p for p in self.platforms
-                          if p.y - self.camera_y < SCREEN_HEIGHT * 3]
 
     def run(self):
         """게임 메인 루프를 실행합니다."""

@@ -27,15 +27,15 @@ class DifficultySettings:
 # 난이도별 설정 객체 생성
 EASY = DifficultySettings(
     platform_width_decrease=0,  # 미적용
-    moving_platform_speed=1,
-    moving_platform_max_speed=4,
-    moving_platform_chance=0.2,
-    transform_min_speed=0.4,
-    transform_max_speed=2.4,
-    transform_min_width_ratio=0.3,
-    vanish_interval=3000,
-    vanish_duration=500,
-    vanish_platform_chance=0.1,
+    moving_platform_speed=0,
+    moving_platform_max_speed=0,
+    moving_platform_chance=0,
+    transform_min_speed=0,
+    transform_max_speed=0,
+    transform_min_width_ratio=0,
+    vanish_interval=0,
+    vanish_duration=0,
+    vanish_platform_chance=0,
     score_multiplier=0.9
 )
 
@@ -58,8 +58,8 @@ HARD = DifficultySettings(
     moving_platform_speed=3,
     moving_platform_max_speed=6,
     moving_platform_chance=0.4,
-    transform_min_speed=0.6,
-    transform_max_speed=1.6,
+    transform_min_speed=1,
+    transform_max_speed=3,
     transform_min_width_ratio=0.1,
     vanish_interval=1000,
     vanish_duration=1500,

@@ -74,12 +74,13 @@ class Player:
 
     def update_score(self):
         """점수(높이)를 업데이트합니다."""
-        # 시작 위치로부터의 높이를 계산 (위로 갈수록 y값이 작아짐)
+        # 시작 위치로부터의 현재 높이를 계산 (위로 갈수록 y값이 작아짐)
         current_height = abs(
             int((SCREEN_HEIGHT - self.pos_y) / 100))  # 100픽셀당 1m
 
+        # 현재 높이를 score에 반영
+        self.score = current_height
+
+        # 최고 높이 업데이트
         if current_height > self.max_height:
             self.max_height = current_height
-            # 난이도 배율 적용
-            self.score = int(self.max_height *
-                             Platform.current_difficulty.score_multiplier)
