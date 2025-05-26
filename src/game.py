@@ -1,5 +1,6 @@
 import pygame
 import random
+import time
 from src.ui.score import ScoreUI
 from src.ui.splash_screen import SplashScreen
 from .constants import *
@@ -18,6 +19,13 @@ class Game:
         self.font = pygame.font.Font(None, FONT_SIZE)
         self.big_font = pygame.font.Font(None, FONT_SIZE + 20)  # 큰 폰트 추가
         self.small_font = pygame.font.Font(None, 24)  # 작은 폰트 추가
+
+        # 성능 모니터링을 위한 변수들
+        self.frame_times = []  # 프레임 시간 기록
+        self.last_fps_check = time.time()
+        self.fps_history = []  # FPS 기록
+        self.platform_count_history = []  # 플랫폼 수 기록
+        self.item_count_history = []  # 아이템 수 기록
 
         # 버튼 위치 및 크기 조정
         button_width = 250
@@ -311,6 +319,9 @@ class Game:
         if self.player.is_dead:
             return
 
+        # 성능 모니터링 시작
+        frame_start = time.time()
+
         # 키보드 입력 처리
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
@@ -357,6 +368,39 @@ class Game:
 
         # 새로운 아이템 생성
         self.generate_items()
+
+        # 성능 모니터링
+        frame_time = time.time() - frame_start
+        self.frame_times.append(frame_time)
+
+        # 1초마다 성능 통계 업데이트
+        current_time = time.time()
+        if current_time - self.last_fps_check >= 1.0:
+            if self.frame_times:
+                avg_frame_time = sum(self.frame_times) / len(self.frame_times)
+                fps = 1.0 / avg_frame_time if avg_frame_time > 0 else 0
+                self.fps_history.append(fps)
+                self.platform_count_history.append(len(self.platforms))
+                self.item_count_history.append(len(self.items))
+
+                # 성능 이슈 체크
+                if fps < 30:  # FPS가 30 미만이면 경고
+                    print(f"Performance Warning: Low FPS ({fps:.1f})")
+                    print(
+                        f"Platforms: {len(self.platforms)}, Items: {len(self.items)}")
+
+                # 메모리 사용량이 너무 많으면 경고
+                if len(self.platforms) > 100 or len(self.items) > 50:
+                    print(f"Memory Warning: Too many objects")
+                    print(
+                        f"Platforms: {len(self.platforms)}, Items: {len(self.items)}")
+
+                # 프레임 시간이 너무 길면 경고
+                if avg_frame_time > 0.033:  # 30 FPS 기준
+                    print(f"Frame Time Warning: {avg_frame_time*1000:.1f}ms")
+
+            self.frame_times = []
+            self.last_fps_check = current_time
 
     def draw_excel_background(self):
         """엑셀 스타일의 배경을 그립니다."""
