@@ -11,6 +11,10 @@ class Player:
         self.screen_y = y  # 화면상의 y 위치
         self.velocity_y = 0
         self.is_jumping = False
+        self.can_double_jump = False  # 2단 점프 가능 여부
+        self.has_double_jumped = False  # 2단 점프 사용 여부
+        self.remaining_double_jumps = 0  # 남은 2단 점프 횟수
+        self.remaining_jump_boosts = 0  # 남은 점프력 증가 횟수
         self.score = 0  # 현재 점수 (높이)
         self.max_height = 0  # 도달한 최대 높이
         self.is_dead = False
@@ -24,10 +28,21 @@ class Player:
     def set_buff(self, buff_type):
         """현재 활성화된 버프 타입을 설정합니다."""
         self.active_buff_type = buff_type
+        if buff_type == 'double_jump':
+            self.can_double_jump = True
+            self.has_double_jumped = False
+            self.remaining_double_jumps = ITEM_TYPES[buff_type]['duration']
+        elif buff_type == 'jump_boost':
+            self.remaining_jump_boosts = ITEM_TYPES[buff_type]['duration']
 
     def remove_buff(self):
         """버프를 제거합니다."""
         self.active_buff_type = None
+        self.can_double_jump = False
+        self.has_double_jumped = False
+        self.remaining_double_jumps = 0
+        self.remaining_jump_boosts = 0
+        self.jump_power_multiplier = 1.0
 
     @property
     def border_color(self):
@@ -63,14 +78,37 @@ class Player:
     def jump(self):
         """플레이어가 점프합니다."""
         if not self.is_jumping:
-            self.velocity_y = JUMP_POWER * self.jump_power_multiplier
+            # 점프력 증가 아이템이 있는 경우
+            if self.active_buff_type == 'jump_boost' and self.remaining_jump_boosts > 0:
+                self.velocity_y = JUMP_POWER * \
+                    ITEM_TYPES['jump_boost']['value']
+                self.remaining_jump_boosts -= 1
+                if self.remaining_jump_boosts <= 0:
+                    self.jump_power_multiplier = 1.0
+                    self.active_buff_type = None
+            else:
+                self.velocity_y = JUMP_POWER * self.jump_power_multiplier
             self.is_jumping = True
+            return True
+        elif self.can_double_jump and not self.has_double_jumped and self.remaining_double_jumps > 0:
+            self.velocity_y = JUMP_POWER * self.jump_power_multiplier
+            self.has_double_jumped = True
+            self.remaining_double_jumps -= 1
+            if self.remaining_double_jumps <= 0:
+                self.can_double_jump = False
             return True
         return False
 
     def update(self, platforms):
         """플레이어의 상태를 업데이트합니다."""
         Movement.apply_gravity(self, platforms)
+
+        # 발판에 착지하면 점프 상태 초기화
+        for platform in platforms:
+            if platform.is_point_above(self.pos_x, self.bottom):
+                self.is_jumping = False
+                self.has_double_jumped = False
+                break
 
         # 화면 아래로 떨어졌는지 확인
         if self.screen_y > SCREEN_HEIGHT + PLAYER_HEIGHT:

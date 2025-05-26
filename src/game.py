@@ -189,31 +189,51 @@ class Game:
                 start_y
             ), icon_size/2, 1)
 
-            # 남은 높이 표시
-            remaining_height = buff_info['duration'] - \
-                (self.player.raw_height - buff_info['start_height'])
-            if remaining_height > 0:
-                text = self.small_font.render(
-                    f"{remaining_height}m", True, (0, 0, 0))
-                text_rect = text.get_rect(center=(
-                    start_x - i * (icon_size + icon_gap),
-                    start_y + icon_size/2 + 10
-                ))
-                self.screen.blit(text, text_rect)
+            # 남은 효과 표시
+            if buff_type == 'double_jump':
+                # 2단 점프의 경우 남은 횟수 표시
+                remaining = self.player.remaining_double_jumps
+                text = self.small_font.render(f"{remaining}", True, (0, 0, 0))
+            elif buff_type == 'jump_boost':
+                # 점프력 증가의 경우 남은 횟수 표시
+                remaining = self.player.remaining_jump_boosts
+                text = self.small_font.render(f"{remaining}", True, (0, 0, 0))
+            else:
+                # 다른 버프의 경우 남은 높이 표시
+                remaining_height = buff_info['duration'] - \
+                    (self.player.raw_height - buff_info['start_height'])
+                if remaining_height > 0:
+                    text = self.small_font.render(
+                        f"{remaining_height}m", True, (0, 0, 0))
+                else:
+                    continue
+
+            text_rect = text.get_rect(center=(
+                start_x - i * (icon_size + icon_gap),
+                start_y + icon_size/2 + 10
+            ))
+            self.screen.blit(text, text_rect)
 
     def update_buffs(self):
         """버프 상태를 업데이트합니다."""
         # 만료된 버프 제거
         expired_buffs = []
         for buff_type, buff_info in self.active_buffs.items():
-            current_height = self.player.raw_height
-            height_diff = abs(current_height - buff_info['start_height'])
-            if height_diff >= buff_info['duration']:
-                expired_buffs.append(buff_type)
-                # 버프 효과 제거
-                if buff_type == 'jump_boost':
-                    self.player.jump_power_multiplier = 1.0
-                elif buff_type == 'speed_reduce':
+            # 점프력 증가나 2단 점프의 경우 횟수가 0이면 만료
+            if buff_type in ['jump_boost', 'double_jump']:
+                if (buff_type == 'jump_boost' and self.player.remaining_jump_boosts <= 0) or \
+                   (buff_type == 'double_jump' and self.player.remaining_double_jumps <= 0):
+                    expired_buffs.append(buff_type)
+                    # 버프 효과 제거
+                    if buff_type == 'jump_boost':
+                        self.player.jump_power_multiplier = 1.0
+            # 속도 감소의 경우 높이로 판단
+            elif buff_type == 'speed_reduce':
+                current_height = self.player.raw_height
+                height_diff = current_height - buff_info['start_height']
+                # 10m 위로 올라가거나 5m 아래로 내려가면 해제
+                if height_diff >= 10 or height_diff <= -5:
+                    expired_buffs.append(buff_type)
                     self.player.speed_multiplier = 1.0
 
         for buff_type in expired_buffs:

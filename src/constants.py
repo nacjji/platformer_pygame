@@ -71,15 +71,15 @@ MOVING_PLATFORM_RANGE = 100  # 움직이는 거리
 
 # 아이템 설정
 ITEM_SIZE = 15  # 아이템의 크기
-ITEM_SPAWN_CHANCE = 0.004  # 아이템 생성 확률 (0.4%)
+ITEM_SPAWN_CHANCE = 0.014  # 아이템 생성 확률 (0.4%)
 
 # 아이템 종류
 ITEM_TYPES = {
     'jump_boost': {
         'color': (0, 255, 0),  # 초록색
-        'duration': 10,  # 지속 높이 (m)
+        'duration': 5,  # 사용 가능 횟수
         'effect': 'jump_power_multiplier',
-        'value': 1.5  # 점프력 2배
+        'value': 1.5  # 점프력 1.5배
     },
     'speed_reduce': {
         'color': (255, 0, 0),  # 빨간색
@@ -87,5 +87,10 @@ ITEM_TYPES = {
         'effect': 'speed_multiplier',
         'value': 0.2  # 이동속도 절반
     },
-
+    'double_jump': {
+        'color': (255, 255, 0),  # 노란색
+        'duration': 5,  # 사용 가능 횟수
+        'effect': 'double_jump',
+        'value': 1.0  # 이동속도 그대로
+    }
 }
