@@ -18,8 +18,22 @@ class Game:
         self.camera_y = 0  # 카메라의 y 위치
         self.score_ui = ScoreUI()  # 점수 UI 초기화
         self.font = pygame.font.Font(None, FONT_SIZE)
+        self.big_font = pygame.font.Font(None, FONT_SIZE + 20)  # 큰 폰트 추가
+
+        # 버튼 위치 및 크기 조정
+        button_width = 250
+        button_height = 50
+        button_gap = 20
+        base_y = SCREEN_HEIGHT//2 + 30
+
         self.retry_button = pygame.Rect(
-            BUTTON_POS[0], BUTTON_POS[1], BUTTON_SIZE[0], BUTTON_SIZE[1])
+            SCREEN_WIDTH//2 - button_width//2,
+            base_y,
+            button_width, button_height)
+        self.change_difficulty_button = pygame.Rect(
+            SCREEN_WIDTH//2 - button_width//2,
+            base_y + button_height + button_gap,
+            button_width, button_height)
 
         # 게임 상태 추가
         self.is_in_splash = True  # 스플래시 화면 상태
@@ -72,10 +86,13 @@ class Game:
                         Platform.set_difficulty(
                             self.splash_screen.selected_difficulty)
                         self.is_in_splash = False  # 게임 시작
-                        self.reset_game()  # 게임 시작할 때 초기화
+                        self.reset_game()
                 # 게임 오버 화면일 때
-                elif self.player and self.player.is_dead and self.retry_button.collidepoint(event.pos):
-                    self.reset_game()
+                elif self.player.is_dead:
+                    if self.retry_button.collidepoint(event.pos):
+                        self.reset_game()
+                    elif self.change_difficulty_button.collidepoint(event.pos):
+                        self.is_in_splash = True  # 스플래시 화면으로 돌아가기
 
             if not self.is_in_splash:  # 게임 플레이 중일 때만
                 if event.type == pygame.KEYDOWN:
@@ -145,24 +162,41 @@ class Game:
                 # 반투명한 검은색 오버레이
                 overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
                 overlay.fill(BLACK)
-                overlay.set_alpha(128)
+                overlay.set_alpha(180)  # 더 진한 오버레이
                 self.screen.blit(overlay, (0, 0))
 
                 # 게임오버 텍스트
-                game_over_text = self.font.render('GAME OVER', True, RED)
+                game_over_text = self.big_font.render('GAME OVER', True, RED)
                 game_over_rect = game_over_text.get_rect(
-                    center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 - 50))
+                    center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 - 80))
                 self.screen.blit(game_over_text, game_over_rect)
 
                 # 최종 점수
                 final_score_text = self.font.render(
                     f'Final Score: {self.player.score}m', True, WHITE)
                 final_score_rect = final_score_text.get_rect(
-                    center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
+                    center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 - 20))
                 self.screen.blit(final_score_text, final_score_rect)
 
                 # Retry 버튼
-                self.draw_button("RETRY", self.retry_button, BUTTON_COLOR)
+                pygame.draw.rect(self.screen, (100, 100, 255),
+                                 self.retry_button)  # 파란색 배경
+                pygame.draw.rect(self.screen, WHITE, self.retry_button, 2)
+                retry_text = self.font.render("RETRY", True, WHITE)
+                retry_rect = retry_text.get_rect(
+                    center=self.retry_button.center)
+                self.screen.blit(retry_text, retry_rect)
+
+                # Change Difficulty 버튼
+                pygame.draw.rect(self.screen, (100, 100, 255),
+                                 self.change_difficulty_button)  # 파란색 배경
+                pygame.draw.rect(self.screen, WHITE,
+                                 self.change_difficulty_button, 2)
+                change_text = self.font.render(
+                    "Change Difficulty", True, WHITE)
+                change_rect = change_text.get_rect(
+                    center=self.change_difficulty_button.center)
+                self.screen.blit(change_text, change_rect)
 
         pygame.display.update()
 

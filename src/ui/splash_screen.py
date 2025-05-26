@@ -1,11 +1,13 @@
 import pygame
 from ..constants import *
+from ..config.difficulty_settings import DIFFICULTY_SETTINGS
 
 
 class SplashScreen:
     def __init__(self):
         self.font = pygame.font.Font(None, FONT_SIZE)
         self.title_font = pygame.font.Font(None, FONT_SIZE * 2)
+        self.small_font = pygame.font.Font(None, FONT_SIZE - 8)  # 작은 폰트 크기 조정
 
         # 버튼 크기와 위치 설정
         self.start_button = pygame.Rect(
@@ -14,13 +16,21 @@ class SplashScreen:
             200, 50
         )
 
-        # 난이도 버튼들
+        # 난이도 버튼들 크기 증가
         button_y = SCREEN_HEIGHT//2
-        self.easy_button = pygame.Rect(SCREEN_WIDTH//4 - 60, button_y, 120, 40)
+        button_width = 120  # 버튼 너비 증가
+        button_height = 60  # 버튼 높이 증가
+        gap = 30  # 버튼 사이 간격
+
+        total_width = (button_width * 3) + (gap * 2)
+        start_x = (SCREEN_WIDTH - total_width) // 2
+
+        self.easy_button = pygame.Rect(
+            start_x, button_y, button_width, button_height)
         self.normal_button = pygame.Rect(
-            SCREEN_WIDTH//2 - 60, button_y, 120, 40)
+            start_x + button_width + gap, button_y, button_width, button_height)
         self.hard_button = pygame.Rect(
-            SCREEN_WIDTH * 3//4 - 60, button_y, 120, 40)
+            start_x + (button_width + gap) * 2, button_y, button_width, button_height)
 
         # 선택된 난이도 (기본값: Normal)
         self.selected_difficulty = "Normal"
@@ -41,20 +51,32 @@ class SplashScreen:
 
         # 난이도 버튼 그리기
         difficulties = [
-            (self.easy_button, "Easy"),
-            (self.normal_button, "Normal"),
-            (self.hard_button, "Hard")
+            (self.easy_button, "Easy",
+             DIFFICULTY_SETTINGS["Easy"].score_multiplier),
+            (self.normal_button, "Normal",
+             DIFFICULTY_SETTINGS["Normal"].score_multiplier),
+            (self.hard_button, "Hard",
+             DIFFICULTY_SETTINGS["Hard"].score_multiplier)
         ]
 
-        for button, text in difficulties:
+        for button, text, multiplier in difficulties:
             color = WHITE if text == self.selected_difficulty else BLACK
             pygame.draw.rect(screen, color, button)
             pygame.draw.rect(screen, WHITE, button, 2)
 
+            # 난이도 텍스트
             text_surface = self.font.render(text, True,
                                             BLACK if text == self.selected_difficulty else WHITE)
-            text_rect = text_surface.get_rect(center=button.center)
+            text_rect = text_surface.get_rect(
+                center=(button.centerx, button.centery - 10))
             screen.blit(text_surface, text_rect)
+
+            # 점수 배율 텍스트
+            multiplier_text = self.small_font.render(f"x{multiplier:.1f}", True,
+                                                     BLACK if text == self.selected_difficulty else WHITE)
+            multiplier_rect = multiplier_text.get_rect(
+                center=(button.centerx, button.centery + 10))
+            screen.blit(multiplier_text, multiplier_rect)
 
         # Start Game 버튼 그리기
         pygame.draw.rect(screen, BLACK, self.start_button)

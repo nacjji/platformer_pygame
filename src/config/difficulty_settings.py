@@ -64,7 +64,7 @@ HARD = DifficultySettings(
     vanish_interval=1000,
     vanish_duration=1500,
     vanish_platform_chance=0.3,
-    score_multiplier=1.1
+    score_multiplier=1.5
 )
 
 # 난이도 설정 매핑
