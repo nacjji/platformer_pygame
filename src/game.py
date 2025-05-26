@@ -48,6 +48,7 @@ class Game:
 
         # 버프 상태 초기화
         self.active_buffs = {}  # 현재 활성화된 버프들
+        self.original_platform_widths = {}  # 플랫폼의 원래 너비 저장
 
     def reset_game(self):
         """게임을 초기 상태로 리셋합니다."""
@@ -227,8 +228,8 @@ class Game:
                     # 버프 효과 제거
                     if buff_type == 'jump_boost':
                         self.player.jump_power_multiplier = 1.0
-            # 속도 감소나 키 반전의 경우 높이로 판단
-            elif buff_type in ['speed_reduce', 'key_reverse']:
+            # 속도 감소, 키 반전, 플랫폼 너비 변경의 경우 높이로 판단
+            elif buff_type in ['speed_reduce', 'key_reverse', 'platform_width']:
                 current_height = self.player.raw_height
                 height_diff = current_height - buff_info['start_height']
                 # 10m 위로 올라가거나 5m 아래로 내려가면 해제
@@ -238,6 +239,15 @@ class Game:
                         self.player.speed_multiplier = 1.0
                     elif buff_type == 'key_reverse':
                         self.player.is_key_reversed = False
+                    elif buff_type == 'platform_width':
+                        # 플랫폼 너비를 원래대로 복구
+                        for platform_id, original_width in self.original_platform_widths.items():
+                            for platform in self.platforms:
+                                if id(platform) == platform_id:
+                                    platform.width = original_width
+                                    if platform.is_transforming:
+                                        platform.initial_width = original_width
+                        self.original_platform_widths.clear()
 
         for buff_type in expired_buffs:
             del self.active_buffs[buff_type]
@@ -256,6 +266,15 @@ class Game:
                 self.player.jump_power_multiplier = 1.0
             elif old_buff_type == 'speed_reduce':
                 self.player.speed_multiplier = 1.0
+            elif old_buff_type == 'platform_width':
+                # 플랫폼 너비를 원래대로 복구
+                for platform_id, original_width in self.original_platform_widths.items():
+                    for platform in self.platforms:
+                        if id(platform) == platform_id:
+                            platform.width = original_width
+                            if platform.is_transforming:
+                                platform.initial_width = original_width
+                self.original_platform_widths.clear()
             self.active_buffs.clear()
 
         # 새로운 버프 적용
@@ -269,6 +288,16 @@ class Game:
             self.player.jump_power_multiplier = effect['value']
         elif buff_type == 'speed_reduce':
             self.player.speed_multiplier = effect['value']
+        elif buff_type == 'platform_width':
+            # 모든 플랫폼의 너비를 변경하고 원래 너비 저장
+            for platform in self.platforms:
+                if id(platform) not in self.original_platform_widths:
+                    self.original_platform_widths[id(
+                        platform)] = platform.width
+                platform.width = effect['value']
+                if platform.is_transforming:
+                    platform.initial_width = effect['value']
+                    platform.min_width = effect['value']
 
         # 플레이어의 테두리 색상 변경
         self.player.set_buff(buff_type)

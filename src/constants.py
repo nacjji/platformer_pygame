@@ -98,5 +98,11 @@ ITEM_TYPES = {
         'duration': 10,  # 지속 높이 (m)
         'effect': 'key_reverse',
         'value': 1.0  # 이동속도 그대로
+    },
+    'platform_width': {
+        'color': (255, 165, 0),  # 주황색
+        'duration': 10,  # 지속 높이 (m)
+        'effect': 'platform_width',
+        'value': 10  # 플랫폼 너비
     }
 }
