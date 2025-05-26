@@ -25,27 +25,59 @@ class Player:
         self.jump_power_multiplier = 1.0  # 점프력 배율
         self.speed_multiplier = 1.0  # 이동속도 배율
         self.is_key_reversed = False  # 키 반전 여부
-        self.active_buff_type = None  # 현재 활성화된 버프 타입
         self.is_sliding = False  # 슬라이딩 상태
         self.slide_friction = 0.98  # 슬라이딩 마찰력
 
+        # 버프 관리 시스템
+        self.active_buffs = set()  # 현재 활성화된 모든 버프
+        self.positive_buff = None  # 현재 활성화된 긍정 버프 (연두색, 노란색)
+
     def set_buff(self, buff_type):
         """현재 활성화된 버프 타입을 설정합니다."""
-        self.active_buff_type = buff_type
-        if buff_type == 'double_jump':
-            self.can_double_jump = True
-            self.has_double_jumped = False
-            self.remaining_double_jumps = ITEM_TYPES[buff_type]['duration']
-        elif buff_type == 'jump_boost':
-            self.remaining_jump_boosts = ITEM_TYPES[buff_type]['duration']
-        elif buff_type == 'key_reverse':
-            self.is_key_reversed = True
-        elif buff_type == 'ice_slide':
-            self.is_sliding = True
+        # 긍정 버프 (연두색, 노란색) 처리
+        if buff_type in ['double_jump', 'jump_boost']:
+            if self.positive_buff is None or self.positive_buff == buff_type:
+                self.positive_buff = buff_type
+                if buff_type == 'double_jump':
+                    self.can_double_jump = True
+                    self.has_double_jumped = False
+                    self.remaining_double_jumps = ITEM_TYPES[buff_type]['duration']
+                elif buff_type == 'jump_boost':
+                    self.remaining_jump_boosts = ITEM_TYPES[buff_type]['duration']
+            return
 
-    def remove_buff(self):
-        """버프를 제거합니다."""
-        self.active_buff_type = None
+        # 중첩 가능한 버프 (빨간색, 보라색, 하늘색, 주황색) 처리
+        if buff_type in ['key_reverse', 'ice_slide']:
+            self.active_buffs.add(buff_type)
+            if buff_type == 'key_reverse':
+                self.is_key_reversed = True
+            elif buff_type == 'ice_slide':
+                self.is_sliding = True
+                self.velocity_x = 0
+
+    def remove_buff(self, buff_type):
+        """특정 버프를 제거합니다."""
+        if buff_type == self.positive_buff:
+            self.positive_buff = None
+            if buff_type == 'double_jump':
+                self.can_double_jump = False
+                self.has_double_jumped = False
+                self.remaining_double_jumps = 0
+            elif buff_type == 'jump_boost':
+                self.remaining_jump_boosts = 0
+                self.jump_power_multiplier = 1.0
+        elif buff_type in self.active_buffs:
+            self.active_buffs.remove(buff_type)
+            if buff_type == 'key_reverse':
+                self.is_key_reversed = False
+            elif buff_type == 'ice_slide':
+                self.is_sliding = False
+                self.velocity_x = 0
+
+    def remove_all_buffs(self):
+        """모든 버프를 제거합니다."""
+        self.positive_buff = None
+        self.active_buffs.clear()
         self.can_double_jump = False
         self.has_double_jumped = False
         self.remaining_double_jumps = 0
@@ -54,13 +86,13 @@ class Player:
         self.speed_multiplier = 1.0
         self.is_key_reversed = False
         self.is_sliding = False
-        self.velocity_x = 0  # 슬라이딩 중지
+        self.velocity_x = 0
 
     @property
     def border_color(self):
-        """현재 버프에 따른 테두리 색상을 반환합니다."""
-        if self.active_buff_type:
-            return ITEM_TYPES[self.active_buff_type]['color']
+        """현재 긍정 버프에 따른 테두리 색상을 반환합니다."""
+        if self.positive_buff:
+            return ITEM_TYPES[self.positive_buff]['color']
         return EXCEL_GRID_COLOR
 
     @property
@@ -103,13 +135,13 @@ class Player:
         """플레이어가 점프합니다."""
         if not self.is_jumping:
             # 점프력 증가 아이템이 있는 경우
-            if self.active_buff_type == 'jump_boost' and self.remaining_jump_boosts > 0:
+            if self.positive_buff == 'jump_boost' and self.remaining_jump_boosts > 0:
                 self.velocity_y = JUMP_POWER * \
                     ITEM_TYPES['jump_boost']['value']
                 self.remaining_jump_boosts -= 1
                 if self.remaining_jump_boosts <= 0:
                     self.jump_power_multiplier = 1.0
-                    self.active_buff_type = None
+                    self.positive_buff = None
             else:
                 self.velocity_y = JUMP_POWER * self.jump_power_multiplier
             self.is_jumping = True
@@ -147,10 +179,12 @@ class Player:
             # 마찰력 적용
             self.velocity_x *= self.slide_friction
         elif self.is_sliding and not is_landing:
-            # 공중에서는 슬라이딩 속도를 점진적으로 감소
-            self.velocity_x *= 0.95
-            if abs(self.velocity_x) < 0.1:
-                self.velocity_x = 0
+            # 공중에서는 슬라이딩 속도를 즉시 0으로 만듦
+            self.velocity_x = 0
+
+        # 하늘색 아이템 해제 조건: 5미터 이상 내려갔을 때
+        if self.is_sliding and self.raw_height - self.score >= 5:
+            self.remove_buff('ice_slide')
 
         # 착지 상태가 아니면 점프 불가능
         if not is_landing:
@@ -166,21 +200,60 @@ class Player:
             self.is_dead = True
 
     def draw(self, screen):
-        """플레이어를 화면에 그립니다."""
-        # 엑셀 스타일의 선택된 셀처럼 보이게 그리기
+        """플레이어와 활성화된 버프들을 화면에 그립니다."""
+        # 플레이어 그리기
         pygame.draw.rect(screen, BLACK, (
             int(self.pos_x - PLAYER_WIDTH/2),
             int(self.screen_y - PLAYER_HEIGHT/2),
             PLAYER_WIDTH,
             PLAYER_HEIGHT
         ))
-        # 버프에 따른 테두리 색상 적용
-        pygame.draw.rect(screen, self.border_color, (
-            int(self.pos_x - PLAYER_WIDTH/2),
-            int(self.screen_y - PLAYER_HEIGHT/2),
-            PLAYER_WIDTH,
-            PLAYER_HEIGHT
-        ), 2)  # 2픽셀 두께의 테두리
+
+        # 겹겹이 쌓이는 테두리 색상 적용
+        border_thickness = 2
+        for buff_type in self.active_buffs:
+            pygame.draw.rect(screen, ITEM_TYPES[buff_type]['color'], (
+                int(self.pos_x - PLAYER_WIDTH/2),
+                int(self.screen_y - PLAYER_HEIGHT/2),
+                PLAYER_WIDTH,
+                PLAYER_HEIGHT
+            ), border_thickness)
+            border_thickness += 2
+
+        # 긍정 버프 테두리
+        if self.positive_buff:
+            pygame.draw.rect(screen, ITEM_TYPES[self.positive_buff]['color'], (
+                int(self.pos_x - PLAYER_WIDTH/2),
+                int(self.screen_y - PLAYER_HEIGHT/2),
+                PLAYER_WIDTH,
+                PLAYER_HEIGHT
+            ), border_thickness)
+
+        # 활성화된 버프 아이콘을 화면 우측 상단에 그리기
+        icon_size = 20
+        icon_spacing = 5
+        start_x = SCREEN_WIDTH - icon_size - 10
+        start_y = 10
+
+        # 긍정 버프 아이콘
+        if self.positive_buff:
+            pygame.draw.rect(screen, ITEM_TYPES[self.positive_buff]['color'], (
+                start_x,
+                start_y,
+                icon_size,
+                icon_size
+            ))
+            start_y += icon_size + icon_spacing
+
+        # 중첩 가능한 버프 아이콘들
+        for buff_type in self.active_buffs:
+            pygame.draw.rect(screen, ITEM_TYPES[buff_type]['color'], (
+                start_x,
+                start_y,
+                icon_size,
+                icon_size
+            ))
+            start_y += icon_size + icon_spacing
 
     def update_screen_position(self, camera_y):
         """화면상의 위치를 업데이트합니다."""
