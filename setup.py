@@ -7,8 +7,15 @@ OPTIONS = {
     'argv_emulation': False,
     'packages': ['pygame'],
     'includes': ['pygame'],
-    'excludes': ['tkinter', 'numpy', 'OpenGL'],
+    'excludes': ['tkinter'],
     'iconfile': 'icon.png' if os.path.exists('icon.png') else None,
+    'plist': {
+        'CFBundleIdentifier': 'com.yourdomain.platformer',
+        'CFBundleName': 'Platformer',
+        'CFBundleShortVersionString': '1.0.0',
+        'LSMinimumSystemVersion': '10.13.0',
+        'NSHighResolutionCapable': True,
+    }
 }
 
 setup(

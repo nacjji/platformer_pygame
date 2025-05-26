@@ -2,9 +2,18 @@ import pygame
 import random
 import time
 from ..constants import *
+from ..config.difficulty_settings import DIFFICULTY_SETTINGS
 
 
 class Platform:
+    # 현재 난이도 설정 (기본값: Normal)
+    current_difficulty = DIFFICULTY_SETTINGS["Normal"]
+
+    @classmethod
+    def set_difficulty(cls, difficulty_name):
+        """난이도 설정을 변경합니다."""
+        cls.current_difficulty = DIFFICULTY_SETTINGS[difficulty_name]
+
     def __init__(self, x, y, width=None, is_moving=False, is_transforming=False, is_vanish=False):
         """
         발판을 초기화합니다.
@@ -24,7 +33,7 @@ class Platform:
         self.width = self.initial_width
         self.height = PLATFORM_HEIGHT
         self.min_width = max(PLATFORM_MIN_WIDTH, int(
-            self.initial_width * TRANSFORM_MIN_WIDTH_RATIO))
+            self.initial_width * self.current_difficulty.transform_min_width_ratio))
 
         # 움직임 관련 속성
         self.is_moving = is_moving
@@ -32,15 +41,16 @@ class Platform:
             self.direction = 1  # 1: 오른쪽, -1: 왼쪽
             height_factor = abs(
                 int((SCREEN_HEIGHT - self.y) / 400))  # 400픽셀당 1씩 증가
-            self.speed = min(MOVING_PLATFORM_SPEED +
-                             height_factor, MOVING_PLATFORM_MAX_SPEED)
+            self.speed = min(self.current_difficulty.moving_platform_speed +
+                             height_factor, self.current_difficulty.moving_platform_max_speed)
             self.move_range = MOVING_PLATFORM_RANGE
 
         # 변형 관련 속성
         self.is_transforming = is_transforming
         if is_transforming:
             self.transform_speed = random.uniform(
-                TRANSFORM_MIN_SPEED, TRANSFORM_MAX_SPEED)
+                self.current_difficulty.transform_min_speed,
+                self.current_difficulty.transform_max_speed)
             self.transform_direction = -1  # -1: 줄어듦, 1: 늘어남
             self.center = self.x + self.width / 2  # 중심점 저장
 
@@ -91,12 +101,12 @@ class Platform:
         if self.is_vanish:
             if self.is_visible:
                 # 보이는 상태에서 VANISH_INTERVAL 시간이 지나면 사라짐
-                if current_time - self.last_vanish_time >= VANISH_INTERVAL:
+                if current_time - self.last_vanish_time >= self.current_difficulty.vanish_interval:
                     self.is_visible = False
                     self.vanish_start_time = current_time
             else:
                 # 사라진 상태에서 VANISH_DURATION 시간이 지나면 다시 나타남
-                if current_time - self.vanish_start_time >= VANISH_DURATION:
+                if current_time - self.vanish_start_time >= self.current_difficulty.vanish_duration:
                     self.is_visible = True
                     self.last_vanish_time = current_time
 
@@ -130,12 +140,20 @@ class Platform:
 
         # 화면에 보이는 발판만 그리기
         if screen_y + self.height > 0 and screen_y < SCREEN_HEIGHT:
-            pygame.draw.rect(screen, GREEN, (
+            # 검은색 바탕 사각형
+            pygame.draw.rect(screen, BLACK, (
                 int(self.x),
                 int(screen_y),
                 int(self.width),
                 int(self.height)
             ))
+            # 하얀색 테두리
+            pygame.draw.rect(screen, WHITE, (
+                int(self.x),
+                int(screen_y),
+                int(self.width),
+                int(self.height)
+            ), 2)  # 두께 2픽셀의 테두리
 
     def is_point_above(self, x, y):
         """주어진 점이 발판 바로 위에 있는지 확인합니다."""
@@ -210,7 +228,7 @@ class Platform:
             width = PLATFORM_MAX_WIDTH
         else:
             width = max(PLATFORM_MIN_WIDTH, current_width -
-                        PLATFORM_WIDTH_DECREASE)
+                        cls.current_difficulty.platform_width_decrease)
 
         # 최대 점프 거리 계산 (수평)
         max_jump_distance = PLAYER_SPEED * abs(2 * JUMP_POWER / GRAVITY)
@@ -234,19 +252,19 @@ class Platform:
 
         # 이전 플랫폼이 사라지는 플랫폼이었다면 일반 또는 움직이는 플랫폼만 생성 가능
         if prev_platform and hasattr(prev_platform, 'is_vanish') and prev_platform.is_vanish:
-            if platform_type < MOVING_PLATFORM_CHANCE:
+            if platform_type < cls.current_difficulty.moving_platform_chance:
                 return cls(x, y, width, is_moving=True)
             else:
                 return cls(x, y, width)
 
-        # 움직이는 플랫폼 (30% 확률)
-        if platform_type < MOVING_PLATFORM_CHANCE:
+        # 움직이는 플랫폼
+        if platform_type < cls.current_difficulty.moving_platform_chance:
             return cls(x, y, width, is_moving=True)
         # 변형되는 플랫폼 (20% 확률)
-        elif platform_type < MOVING_PLATFORM_CHANCE + 0.2:
+        elif platform_type < cls.current_difficulty.moving_platform_chance + 0.2:
             return cls(x, y, width, is_transforming=True)
-        # 사라지는 플랫폼 (15% 확률)
-        elif platform_type < MOVING_PLATFORM_CHANCE + 0.2 + VANISH_PLATFORM_CHANCE:
+        # 사라지는 플랫폼
+        elif platform_type < cls.current_difficulty.moving_platform_chance + 0.2 + cls.current_difficulty.vanish_platform_chance:
             return cls(x, y, width, is_vanish=True)
         # 일반 플랫폼
         else:

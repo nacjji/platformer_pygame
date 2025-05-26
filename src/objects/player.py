@@ -1,6 +1,7 @@
 import pygame
 from ..constants import *
 from ..actions.movement import Movement
+from ..objects.platform import Platform  # Platform 클래스 임포트 추가
 
 
 class Player:
@@ -52,12 +53,20 @@ class Player:
 
     def draw(self, screen):
         """플레이어를 화면에 그립니다."""
-        pygame.draw.rect(screen, WHITE, (
+        # 검은색 바탕 사각형
+        pygame.draw.rect(screen, BLACK, (
             int(self.pos_x - PLAYER_WIDTH/2),
             int(self.screen_y - PLAYER_HEIGHT/2),
             PLAYER_WIDTH,
             PLAYER_HEIGHT
         ))
+        # 하얀색 테두리
+        pygame.draw.rect(screen, WHITE, (
+            int(self.pos_x - PLAYER_WIDTH/2),
+            int(self.screen_y - PLAYER_HEIGHT/2),
+            PLAYER_WIDTH,
+            PLAYER_HEIGHT
+        ), 2)  # 두께 2픽셀의 테두리
 
     def update_screen_position(self, camera_y):
         """화면상의 위치를 업데이트합니다."""
@@ -68,6 +77,9 @@ class Player:
         # 시작 위치로부터의 높이를 계산 (위로 갈수록 y값이 작아짐)
         current_height = abs(
             int((SCREEN_HEIGHT - self.pos_y) / 100))  # 100픽셀당 1m
+
         if current_height > self.max_height:
             self.max_height = current_height
-            self.score = self.max_height
+            # 난이도 배율 적용
+            self.score = int(self.max_height *
+                             Platform.current_difficulty.score_multiplier)

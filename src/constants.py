@@ -38,24 +38,12 @@ PLATFORM_HEIGHT = 20
 PLATFORM_MIN_WIDTH = 1   # 최소 발판 너비를 1px로 설정
 PLATFORM_MAX_WIDTH = 60  # 최대 발판 너비
 PLATFORM_WIDTH_DECREASE = 1  # 발판 생성마다 줄어드는 너비
-# 한 화면에 그리는 발판 최대 개수
-PLATFORM_COUNT = SCREEN_HEIGHT // (PLATFORM_HEIGHT + 10)
 
-# 발판 생성 관련
-PLATFORM_MIN_GAP = MAX_JUMP_DISTANCE * 0.7  # 최소 수평 간격 (최대 점프 거리의 30%)
-PLATFORM_MAX_GAP = MAX_JUMP_DISTANCE * 0.9  # 최대 수평 간격 (최대 점프 거리의 70%)
-PLATFORM_MIN_HEIGHT_GAP = MAX_JUMP_HEIGHT * 0.7  # 최소 수직 간격
-PLATFORM_MAX_HEIGHT_GAP = MAX_JUMP_HEIGHT * 0.9  # 최대 수직 간격
 
 # 점프 최대 거리 계산
-MAX_HORIZONTAL_DISTANCE = PLAYER_SPEED * MAX_JUMP_TIME  # 수평으로 이동 가능한 최대 거리
 MAX_VERTICAL_DISTANCE = abs(
     JUMP_POWER * MAX_JUMP_TIME / 2 + 0.5 * GRAVITY * (MAX_JUMP_TIME / 2) ** 2)
 
-# 발판 간격 설정
-MIN_HORIZONTAL_GAP = MAX_HORIZONTAL_DISTANCE * 0.4
-MAX_HORIZONTAL_GAP = MAX_HORIZONTAL_DISTANCE * 0.7
-VERTICAL_GAP = MAX_VERTICAL_DISTANCE * 0.7
 
 # UI 설정
 FONT_SIZE = 36
@@ -68,17 +56,4 @@ BUTTON_SIZE = (200, 50)  # 버튼 크기
 BUTTON_POS = (SCREEN_WIDTH//2 - 100, SCREEN_HEIGHT//2 + 50)  # 버튼 위치
 
 # 움직이는 플랫폼 설정
-MOVING_PLATFORM_SPEED = 3  # 움직이는 플랫폼의 기본 속도
-MOVING_PLATFORM_MAX_SPEED = 6  # 움직이는 플랫폼의 최대 속도
 MOVING_PLATFORM_RANGE = 100  # 움직이는 거리
-MOVING_PLATFORM_CHANCE = 0.4  # 움직이는 플랫폼이 생성될 확률
-
-# 변형 플랫폼 설정
-TRANSFORM_MIN_SPEED = 0.5  # 최소 변형 속도
-TRANSFORM_MAX_SPEED = 2.0  # 최대 변형 속도
-TRANSFORM_MIN_WIDTH_RATIO = 0.2  # 최소 너비 비율 (초기 너비의 10%)
-
-# 사라지는 플랫폼 설정
-VANISH_INTERVAL = 2000  # 사라지고 나타나는 주기 (밀리초)
-VANISH_DURATION = 1000  # 사라져있는 시간 (밀리초)
-VANISH_PLATFORM_CHANCE = 0.15  # 사라지는 플랫폼이 생성될 확률
