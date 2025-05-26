@@ -34,6 +34,13 @@ class Platform:
         self.min_width = max(PLATFORM_MIN_WIDTH, int(
             self.initial_width * self.current_difficulty.transform_min_width_ratio))
 
+        # 아이템 효과 적용 여부
+        self.effects = {
+            'is_moving': is_moving,
+            'is_transforming': is_transforming,
+            'is_vanish': is_vanish
+        }
+
         # 움직임 관련 속성
         self.is_moving = is_moving
         if is_moving:
@@ -59,6 +66,18 @@ class Platform:
             self.is_visible = True
             self.last_vanish_time = time.time() * 1000
             self.vanish_start_time = 0
+
+    def apply_effects(self):
+        """아이템 효과를 적용합니다."""
+        self.is_moving = self.effects['is_moving']
+        self.is_transforming = self.effects['is_transforming']
+        self.is_vanish = self.effects['is_vanish']
+
+    def remove_effects(self):
+        """아이템 효과를 제거합니다."""
+        self.is_moving = False
+        self.is_transforming = False
+        self.is_vanish = False
 
     def update(self):
         """플랫폼의 상태를 업데이트합니다."""
@@ -276,3 +295,9 @@ class Platform:
         # 일반 플랫폼
         else:
             return cls(x, y, width)
+
+    def revert_to_original(self):
+        """발판의 너비를 원래 상태로 복구하고 효과를 제거합니다."""
+        self.width = self.initial_width
+        self.is_transformed = False
+        self.remove_effects()

@@ -82,6 +82,8 @@ class Player:
                 for platform in platforms:
                     if platform.is_transformed:
                         platform.revert_to_original()
+                        platform.is_transformed = False
+                        platform.width = platform.original_width  # 발판 너비 복구
 
     def remove_all_buffs(self):
         """모든 버프를 제거합니다."""
