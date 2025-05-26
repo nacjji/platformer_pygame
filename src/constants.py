@@ -71,7 +71,7 @@ MOVING_PLATFORM_RANGE = 100  # 움직이는 거리
 
 # 아이템 설정
 ITEM_SIZE = 15  # 아이템의 크기
-ITEM_SPAWN_CHANCE = 0.015  # 아이템 생성 확률 (0.1%)
+ITEM_SPAWN_CHANCE = 0.004  # 아이템 생성 확률 (0.4%)
 
 # 아이템 종류
 ITEM_TYPES = {
