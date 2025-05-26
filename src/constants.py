@@ -27,7 +27,7 @@ RED = (192, 0, 0)  # 엑셀 스타일의 빨간색
 # 플레이어 설정
 PLAYER_WIDTH = 20  # 플레이어 너비
 PLAYER_HEIGHT = 40  # 플레이어 높이
-PLAYER_SPEED = 5
+PLAYER_SPEED = 4
 JUMP_POWER = -15
 GRAVITY = 0.8
 
